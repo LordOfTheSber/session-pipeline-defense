@@ -14,7 +14,7 @@ export function SettingsPage() {
       {health.error && (
         <ErrorState
           title="Backend unavailable"
-          message="Could not load API health status. Ensure backend is running on VITE_API_BASE_URL (default: http://localhost:8080)."
+          message="Could not load API health status. Ensure backend is running on http://localhost:8080 and Vite dev proxy is active (or set VITE_API_BASE_URL)."
         />
       )}
 

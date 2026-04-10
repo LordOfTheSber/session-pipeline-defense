@@ -47,8 +47,6 @@ cd backend
 Backend health endpoint:
 - `GET http://localhost:8080/api/health`
 
-CORS for frontend dev is enabled for `http://localhost:5173` by default and can be overridden with `CORS_ALLOWED_ORIGINS`.
-
 ### 3) Run frontend
 ```bash
 cd frontend
@@ -58,6 +56,7 @@ npm run dev
 
 Frontend default URL:
 - `http://localhost:5173`
+- Vite dev server proxies `/api/*` to `http://localhost:8080` to avoid browser CORS issues during local development.
 
 ## What Phase 1–3 includes
 - Spring Boot API scaffold with env-based datasource config.

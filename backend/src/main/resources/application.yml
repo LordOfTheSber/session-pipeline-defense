@@ -2,12 +2,12 @@ spring:
   application:
     name: session-pipeline-defense-api
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/session_pipeline_defense}
-    username: ${DB_USERNAME:session_user}
-    password: ${DB_PASSWORD:session_pass}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     open-in-view: false
     properties:
       hibernate:

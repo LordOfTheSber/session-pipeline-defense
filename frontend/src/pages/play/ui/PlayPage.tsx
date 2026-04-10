@@ -1,14 +1,60 @@
+import { useEffect, useState } from 'react';
 import { PhaserGameCanvas } from '../../../widgets/phaser-game/ui/PhaserGameCanvas';
 
+type LocalRunSummary = {
+  processedCount: number;
+  waveReached: number;
+  survivalSeconds: number;
+  creditsSpent: number;
+  systemHealthEnd: number;
+  activeSessionPeak: number;
+  score: number;
+  mode: 'ENDLESS';
+  difficulty: 'NORMAL';
+};
+
+const RUN_COMPLETE_EVENT = 'session-defense:run-complete';
+
 export function PlayPage() {
+  const [summary, setSummary] = useState<LocalRunSummary | null>(null);
+
+  useEffect(() => {
+    const onRunComplete = (event: Event) => {
+      const customEvent = event as CustomEvent<LocalRunSummary>;
+      setSummary(customEvent.detail);
+    };
+
+    window.addEventListener(RUN_COMPLETE_EVENT, onRunComplete);
+    return () => {
+      window.removeEventListener(RUN_COMPLETE_EVENT, onRunComplete);
+    };
+  }, []);
+
   return (
     <section>
       <h2>Play</h2>
       <p>
-        Phase 4 vertical slice is live: deploy Sessions into lanes, process incoming Data, and maintain
-        throughput before overload.
+        Phase 5 gameplay is live: deploy archetyped Sessions with TTL/capacity limits, survive escalating Data
+        waves, and review your run summary on system overload.
       </p>
       <PhaserGameCanvas />
+
+      {summary && (
+        <div className="panel">
+          <h3>Latest Run Summary</h3>
+          <ul>
+            <li>Mode: {summary.mode}</li>
+            <li>Difficulty: {summary.difficulty}</li>
+            <li>Score: {summary.score}</li>
+            <li>Processed Data: {summary.processedCount}</li>
+            <li>Wave Reached: {summary.waveReached}</li>
+            <li>Survival Time: {summary.survivalSeconds}s</li>
+            <li>Credits Spent: {summary.creditsSpent}</li>
+            <li>Peak Active Sessions: {summary.activeSessionPeak}</li>
+            <li>Health at End: {summary.systemHealthEnd}</li>
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

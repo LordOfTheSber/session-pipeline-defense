@@ -103,7 +103,7 @@ class RunApiIntegrationTests {
                     value.setId(UUID.randomUUID());
                     value.setChallengeDate(LocalDate.of(2026, 4, 10));
                     value.setSeed(777L);
-                    value.setConfigJson("{}");
+                    value.setConfigJson(Map.of());
                     value.setCreatedAt(Instant.now());
                     return dailyChallengeRepository.save(value);
                 });

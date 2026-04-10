@@ -44,7 +44,12 @@ public class RunService {
         run.setNicknameSnapshot(request.nickname().trim());
         run.setMode(request.mode());
         run.setDifficulty(request.difficulty());
-        run.setChallengeDate(request.challengeDate());
+
+        LocalDate challengeDate = request.challengeDate();
+        if (challengeDate == null) {
+            challengeDate = LocalDate.now(java.time.ZoneOffset.UTC);
+        }
+        run.setChallengeDate(challengeDate);
         run.setChallengeSeed(request.challengeSeed());
         run.setSurvivalSeconds(request.survivalSeconds());
         run.setProcessedCount(request.processedCount());

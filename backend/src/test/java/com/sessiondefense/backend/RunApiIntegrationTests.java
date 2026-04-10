@@ -55,6 +55,32 @@ class RunApiIntegrationTests {
                 .andExpect(jsonPath("$.suspicious").value(false));
     }
 
+
+    @Test
+    void shouldIncludeTodaysEndlessRunsInDailyLeaderboard() throws Exception {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("nickname", "today-ops");
+        payload.put("mode", "ENDLESS");
+        payload.put("difficulty", "STANDARD");
+        payload.put("survivalSeconds", 90);
+        payload.put("processedCount", 30);
+        payload.put("waveReached", 3);
+        payload.put("activeSessionPeak", 7);
+        payload.put("creditsSpent", 180);
+        payload.put("systemHealthEnd", 42);
+        payload.put("score", 900);
+
+        mockMvc.perform(post("/api/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isCreated());
+
+        String today = LocalDate.now(java.time.ZoneOffset.UTC).toString();
+        mockMvc.perform(get("/api/leaderboards/daily?date=" + today + "&difficulty=STANDARD&limit=5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].nickname").value("today-ops"));
+    }
+
     @Test
     void shouldReturnGlobalAndDailyLeaderboards() throws Exception {
         DailyChallenge challenge = new DailyChallenge();

@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: session-pipeline-defense-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-session_pipeline_defense}
+      POSTGRES_USER: ${POSTGRES_USER:-session_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-session_pass}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - session_pipeline_defense_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-session_user} -d ${POSTGRES_DB:-session_pipeline_defense}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  session_pipeline_defense_pgdata:

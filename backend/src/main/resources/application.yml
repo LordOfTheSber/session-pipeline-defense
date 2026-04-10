@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: session-pipeline-defense-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/session_pipeline_defense}
+    username: ${DB_USERNAME:session_user}
+    password: ${DB_PASSWORD:session_pass}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

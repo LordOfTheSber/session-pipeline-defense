@@ -5,7 +5,8 @@ export function PlayPage() {
     <section>
       <h2>Play</h2>
       <p>
-        Phase 1 shell: Phaser canvas is active. Core lane defense gameplay systems start in Phase 4.
+        Phase 4 vertical slice is live: deploy Sessions into lanes, process incoming Data, and maintain
+        throughput before overload.
       </p>
       <PhaserGameCanvas />
     </section>

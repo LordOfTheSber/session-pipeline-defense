@@ -47,7 +47,7 @@ public class RunService {
 
         LocalDate challengeDate = request.challengeDate();
         if (challengeDate == null) {
-            challengeDate = LocalDate.now(java.time.ZoneOffset.UTC);
+            challengeDate = LocalDate.now(java.time.ZoneOffset.ofHours(3));
         }
         run.setChallengeDate(challengeDate);
         run.setChallengeSeed(request.challengeSeed());

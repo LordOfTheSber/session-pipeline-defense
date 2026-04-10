@@ -75,7 +75,7 @@ class RunApiIntegrationTests {
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isCreated());
 
-        String today = LocalDate.now(java.time.ZoneOffset.UTC).toString();
+        String today = LocalDate.now(java.time.ZoneOffset.ofHours(3)).toString();
         mockMvc.perform(get("/api/leaderboards/daily?date=" + today + "&difficulty=STANDARD&limit=5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nickname").value("today-ops"));

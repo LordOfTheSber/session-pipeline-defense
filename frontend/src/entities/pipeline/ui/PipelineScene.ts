@@ -59,7 +59,7 @@ type RunSummaryPayload = {
   activeSessionPeak: number;
   score: number;
   mode: 'ENDLESS';
-  difficulty: 'NORMAL';
+  difficulty: 'STANDARD';
 };
 
 const LANE_COUNT = 5;
@@ -490,7 +490,7 @@ export class PipelineScene extends Phaser.Scene {
       activeSessionPeak: this.activeSessionPeak,
       score,
       mode: 'ENDLESS',
-      difficulty: 'NORMAL',
+      difficulty: 'STANDARD',
     };
   }
 

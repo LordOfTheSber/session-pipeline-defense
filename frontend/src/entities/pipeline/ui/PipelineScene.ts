@@ -58,8 +58,17 @@ type RunSummaryPayload = {
   systemHealthEnd: number;
   activeSessionPeak: number;
   score: number;
-  mode: 'ENDLESS';
+  mode: 'ENDLESS' | 'DAILY';
   difficulty: 'STANDARD';
+  challengeDate?: string;
+  challengeSeed?: number;
+};
+
+export type PipelineRunOptions = {
+  mode: 'ENDLESS' | 'DAILY';
+  difficulty: 'STANDARD';
+  challengeDate?: string;
+  challengeSeed?: number;
 };
 
 const LANE_COUNT = 5;
@@ -179,11 +188,20 @@ export class PipelineScene extends Phaser.Scene {
 
   private isRunOver = false;
 
-  constructor() {
+  private runOptions: PipelineRunOptions;
+
+  private randomizer?: Phaser.Math.RandomDataGenerator;
+
+  constructor(runOptions?: PipelineRunOptions) {
     super('PipelineScene');
+    this.runOptions = runOptions ?? { mode: 'ENDLESS', difficulty: 'STANDARD' };
   }
 
   create() {
+    if (this.runOptions.mode === 'DAILY' && this.runOptions.challengeSeed !== undefined) {
+      this.randomizer = new Phaser.Math.RandomDataGenerator([String(this.runOptions.challengeSeed)]);
+    }
+
     this.drawBoard();
     this.registerPlacementInput();
 
@@ -489,8 +507,10 @@ export class PipelineScene extends Phaser.Scene {
       systemHealthEnd: this.systemHealth,
       activeSessionPeak: this.activeSessionPeak,
       score,
-      mode: 'ENDLESS',
-      difficulty: 'STANDARD',
+      mode: this.runOptions.mode,
+      difficulty: this.runOptions.difficulty,
+      challengeDate: this.runOptions.challengeDate,
+      challengeSeed: this.runOptions.challengeSeed,
     };
   }
 
@@ -511,7 +531,7 @@ export class PipelineScene extends Phaser.Scene {
   }
 
   private spawnDataPacket() {
-    const lane = Phaser.Math.Between(0, LANE_COUNT - 1);
+    const lane = this.randomBetween(0, LANE_COUNT - 1);
     const laneY = BOARD_Y + lane * LANE_HEIGHT;
     const type = this.pickDataArchetype();
     const spec = DATA_SPECS[type];
@@ -536,7 +556,7 @@ export class PipelineScene extends Phaser.Scene {
   }
 
   private pickDataArchetype(): DataArchetype {
-    const roll = Phaser.Math.Between(1, 100);
+    const roll = this.randomBetween(1, 100);
     const waveBias = Math.min(20, this.wave * 2);
 
     if (roll <= 45 - Math.floor(waveBias * 0.3)) {
@@ -597,7 +617,7 @@ export class PipelineScene extends Phaser.Scene {
 
     const spec = SESSION_SPECS[this.selectedSessionType];
     this.hudText.setText(
-      `Credits: ${Math.floor(this.credits)} | Health: ${this.systemHealth} | Processed: ${this.processedCount} | Wave: ${this.wave} | Time: ${Math.floor(this.elapsedSeconds)}s | Selected: ${spec.label} (${spec.cost})`,
+      `Mode: ${this.runOptions.mode} | Credits: ${Math.floor(this.credits)} | Health: ${this.systemHealth} | Processed: ${this.processedCount} | Wave: ${this.wave} | Time: ${Math.floor(this.elapsedSeconds)}s | Selected: ${spec.label} (${spec.cost})`,
     );
   }
 
@@ -607,5 +627,13 @@ export class PipelineScene extends Phaser.Scene {
 
   private cellKey(lane: number, column: number): string {
     return `${lane}-${column}`;
+  }
+
+  private randomBetween(min: number, max: number): number {
+    if (this.randomizer) {
+      return this.randomizer.between(min, max);
+    }
+
+    return Phaser.Math.Between(min, max);
   }
 }

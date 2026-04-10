@@ -47,14 +47,14 @@ export function LeaderboardPage() {
   return (
     <section>
       <h2>Leaderboards</h2>
-      <p>Shell now uses typed API calls with loading/error states while leaderboard endpoints are implemented in Phase 6.</p>
+      <p>Global and daily leaderboard data is loaded from persistence-backed backend APIs.</p>
 
       {globalLeaderboard.isLoading ? (
         <LoadingState label="global leaderboard" />
       ) : globalLeaderboard.error ? (
         <ErrorState
           title="Global leaderboard unavailable"
-          message="The global leaderboard API endpoint is not available yet. This is expected until Phase 6 backend work is complete."
+          message="The global leaderboard API endpoint is not available yet. Check backend connectivity and run ingestion status."
         />
       ) : (
         <LeaderboardTable title="Global Throughput" entries={globalLeaderboard.data ?? []} />
@@ -65,7 +65,7 @@ export function LeaderboardPage() {
       ) : dailyLeaderboard.error ? (
         <ErrorState
           title="Daily leaderboard unavailable"
-          message={`The daily leaderboard API endpoint for ${today} is not available yet. This is expected until Phase 6 backend work is complete.`}
+          message={`The daily leaderboard API endpoint for ${today} is not available yet. Check backend connectivity and run ingestion status.`}
         />
       ) : (
         <LeaderboardTable title={`Daily Challenge — ${today}`} entries={dailyLeaderboard.data ?? []} />

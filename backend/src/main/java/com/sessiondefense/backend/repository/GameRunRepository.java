@@ -5,13 +5,15 @@ import com.sessiondefense.backend.domain.entity.GameRun;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface GameRunRepository extends JpaRepository<GameRun, UUID> {
-    List<GameRun> findTop20ByDifficultyOrderByScoreDescCreatedAtDesc(Difficulty difficulty);
+    List<GameRun> findByDifficultyOrderByScoreDescCreatedAtDesc(Difficulty difficulty, Pageable pageable);
 
-    List<GameRun> findTop20ByChallengeDateAndDifficultyOrderByScoreDescCreatedAtDesc(
+    List<GameRun> findByChallengeDateAndDifficultyOrderByScoreDescCreatedAtDesc(
             LocalDate challengeDate,
-            Difficulty difficulty
+            Difficulty difficulty,
+            Pageable pageable
     );
 }

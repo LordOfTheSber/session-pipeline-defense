@@ -14,13 +14,13 @@ export function RunSummaryPage() {
   return (
     <section>
       <h2>Run Summary</h2>
-      <p>Typed run summary API wiring is in place. Persistence-backed run detail API lands in Phase 6.</p>
+      <p>Run detail is loaded from the persisted <code>/api/runs/{`{id}`}</code> backend endpoint.</p>
 
       {runSummary.isLoading && <LoadingState label="run summary" />}
       {runSummary.error && (
         <ErrorState
           title="Run summary unavailable"
-          message={`Run ${runId} could not be loaded. This is expected until the /api/runs/{id} endpoint is implemented in Phase 6.`}
+          message={`Run ${runId} could not be loaded. Ensure the run ID exists and backend services are running.`}
         />
       )}
 

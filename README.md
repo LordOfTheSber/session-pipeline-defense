@@ -6,7 +6,8 @@ PvZ-inspired full-stack lane defense mini-game for **VibeCoding Challenge #3 —
 - ✅ Phase 0 complete: canonical handoff plan in [`AGENTS.md`](./AGENTS.md)
 - ✅ Phase 1 complete: project scaffold + local infrastructure
 - ✅ Phase 2 complete: Flyway baseline migration + core JPA entities/repositories
-- 🔜 Next: Phase 3 (shell integration + typed API client)
+- ✅ Phase 3 complete: shell integration + typed API client + loading/error states
+- 🔜 Next: Phase 4 (gameplay vertical slice)
 
 ## Tech stack
 - **Backend:** Java 21, Spring Boot 3, Spring Web/Validation/JPA, Flyway, PostgreSQL driver
@@ -46,6 +47,8 @@ cd backend
 Backend health endpoint:
 - `GET http://localhost:8080/api/health`
 
+CORS for frontend dev is enabled for `http://localhost:5173` by default and can be overridden with `CORS_ALLOWED_ORIGINS`.
+
 ### 3) Run frontend
 ```bash
 cd frontend
@@ -56,7 +59,7 @@ npm run dev
 Frontend default URL:
 - `http://localhost:5173`
 
-## What Phase 1–2 includes
+## What Phase 1–3 includes
 - Spring Boot API scaffold with env-based datasource config.
 - Custom API health endpoint (`/api/health`).
 - React Router app shell with pages:
@@ -68,11 +71,10 @@ Frontend default URL:
 - Phaser canvas mounted in Play page with a visual placeholder scene.
 
 ## What is intentionally deferred
-- Flyway SQL baseline migration for `player_profiles`, `daily_challenges`, and `game_runs`
-- Core JPA entities + Spring Data repositories for persistence foundation
 - Real leaderboard and run APIs (Phase 6)
 - Daily challenge API integration (Phase 7)
 - Full lane-defense gameplay loop (Phase 4+)
+- Real run submission validation + persistence views (Phase 6)
 
 
 ## Frontend architecture (FSD)

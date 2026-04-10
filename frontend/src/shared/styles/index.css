@@ -78,3 +78,24 @@ a {
   border-radius: 8px;
   overflow: hidden;
 }
+
+.state-loading {
+  border-color: #0ea5e9;
+}
+
+.state-error {
+  border-color: #ef4444;
+  background: rgba(69, 10, 10, 0.4);
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  text-align: left;
+  border-bottom: 1px solid #334155;
+  padding: 0.45rem;
+}

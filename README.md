@@ -71,3 +71,12 @@ Frontend default URL:
 - Real leaderboard and run APIs (Phase 6)
 - Daily challenge API integration (Phase 7)
 - Full lane-defense gameplay loop (Phase 4+)
+
+
+## Frontend architecture (FSD)
+- `src/app` — app composition, providers, router, layouts.
+- `src/pages` — route-level pages grouped by slice.
+- `src/widgets` — composed UI blocks (e.g., Phaser host widget).
+- `src/entities` — domain UI primitives (e.g., pipeline scene entity).
+- `src/features` — user features (reserved for next phases).
+- `src/shared` — shared styles/utils/types/api primitives.

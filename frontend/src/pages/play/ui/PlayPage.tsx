@@ -1,4 +1,4 @@
-import { PhaserGameCanvas } from '../components/PhaserGameCanvas';
+import { PhaserGameCanvas } from '../../../widgets/phaser-game/ui/PhaserGameCanvas';
 
 export function PlayPage() {
   return (

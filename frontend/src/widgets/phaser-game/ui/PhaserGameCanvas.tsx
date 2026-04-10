@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import { useEffect, useRef } from 'react';
-import { PipelineScene } from '../game/scenes/PipelineScene';
+import { PipelineScene } from '../../../entities/pipeline/ui/PipelineScene';
 
 export function PhaserGameCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);

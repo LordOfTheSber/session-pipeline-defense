@@ -47,3 +47,10 @@ export interface RunSubmissionResponse {
   suspicious: boolean;
   validationNotes: string | null;
 }
+
+export interface DailyChallengeResponse {
+  challengeDate: string;
+  seed: number;
+  challengeModifiers: Record<string, number>;
+  leaderboardWindowKey: string;
+}

@@ -4,9 +4,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.Map;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "daily_challenges")
@@ -21,8 +24,9 @@ public class DailyChallenge {
     @Column(nullable = false)
     private long seed;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "config_json", nullable = false, columnDefinition = "jsonb")
-    private String configJson;
+    private Map<String, Object> configJson;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -51,11 +55,11 @@ public class DailyChallenge {
         this.seed = seed;
     }
 
-    public String getConfigJson() {
+    public Map<String, Object> getConfigJson() {
         return configJson;
     }
 
-    public void setConfigJson(String configJson) {
+    public void setConfigJson(Map<String, Object> configJson) {
         this.configJson = configJson;
     }
 

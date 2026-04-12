@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { gameApi } from '@/shared/api/gameApi';
 import { ApiError } from '@/shared/api/http';
 import { getStoredDifficulty, getStoredNickname } from '@/shared/lib/profilePrefs';
+import { getStoredLanguage, t } from '@/shared/lib/i18n';
 import type { DailyChallengeResponse, Difficulty, RunSubmissionResponse } from '@/shared/types/api';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
 import { ErrorState, LoadingState } from '@/shared/ui/ResourceState';
@@ -10,6 +11,7 @@ import { act1AriaLines } from '@/narrative/acts/act1';
 import {
   HUD_UPDATE_EVENT,
   PIPELINE_EVENT,
+  PIPELINE_PAUSE_EVENT,
   RUN_COMPLETE_EVENT,
   type PipelineEventPayload,
   type PipelineHudPayload,
@@ -25,7 +27,7 @@ type LocalRunSummary = {
   systemHealthEnd: number;
   activeSessionPeak: number;
   score: number;
-  mode: 'ENDLESS' | 'DAILY' | 'FIRST_SHIFT';
+  mode: 'ENDLESS' | 'DAILY' | 'FIRST_SHIFT' | 'TIMED';
   difficulty: Difficulty;
   challengeDate?: string;
   challengeSeed?: number;
@@ -65,7 +67,9 @@ export function PlayPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawMode = searchParams.get('mode');
-  const mode: PipelineRunOptions['mode'] = rawMode === 'DAILY' ? 'DAILY' : rawMode === 'FIRST_SHIFT' ? 'FIRST_SHIFT' : 'ENDLESS';
+  const mode: PipelineRunOptions['mode'] =
+    rawMode === 'DAILY' ? 'DAILY' : rawMode === 'FIRST_SHIFT' ? 'FIRST_SHIFT' : rawMode === 'TIMED' ? 'TIMED' : 'ENDLESS';
+  const timedDuration = Number(searchParams.get('duration') ?? 180);
   const queryDifficulty = searchParams.get('difficulty');
   const storedDifficulty = getStoredDifficulty();
   const selectedDifficulty: Difficulty =
@@ -74,6 +78,8 @@ export function PlayPage() {
       : storedDifficulty;
 
   const nickname = getStoredNickname();
+  const locale = getStoredLanguage();
+  const [paused, setPaused] = useState(false);
   const [summary, setSummary] = useState<LocalRunSummary | null>(null);
   const [submittedRun, setSubmittedRun] = useState<RunSubmissionResponse | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -101,15 +107,19 @@ export function PlayPage() {
         difficulty: selectedDifficulty,
         challengeDate: dailyChallenge.data.challengeDate,
         challengeSeed: dailyChallenge.data.seed,
+        locale,
       };
     }
 
     if (mode === 'FIRST_SHIFT') {
-      return { mode: 'FIRST_SHIFT', difficulty: 'STANDARD' };
+      return { mode: 'FIRST_SHIFT', difficulty: 'STANDARD', locale };
+    }
+    if (mode === 'TIMED') {
+      return { mode: 'TIMED', difficulty: selectedDifficulty, timeLimitSeconds: Math.max(60, timedDuration), locale };
     }
 
-    return { mode: 'ENDLESS', difficulty: selectedDifficulty };
-  }, [dailyChallenge.data, mode, selectedDifficulty]);
+    return { mode: 'ENDLESS', difficulty: selectedDifficulty, locale };
+  }, [dailyChallenge.data, locale, mode, selectedDifficulty, timedDuration]);
 
   useEffect(() => {
     setDailyStarted(mode !== 'DAILY');
@@ -164,10 +174,11 @@ export function PlayPage() {
 
       try {
         const { mode: summaryMode, ...summaryRest } = runSummary;
+        const persistMode = summaryMode === 'DAILY' ? 'DAILY' : 'ENDLESS';
         const response = await gameApi.submitRun({
           nickname,
           ...summaryRest,
-          mode: summaryMode as 'ENDLESS' | 'DAILY',
+          mode: persistMode,
         });
         setSubmittedRun(response);
       } catch (error) {
@@ -225,13 +236,25 @@ export function PlayPage() {
     }
   };
 
+  const onTogglePause = () => {
+    const nextPaused = !paused;
+    setPaused(nextPaused);
+    window.dispatchEvent(new CustomEvent(PIPELINE_PAUSE_EVENT, { detail: { paused: nextPaused } }));
+  };
+
   return (
     <section className={mode === 'DAILY' ? 'daily-mode-shell' : undefined}>
-      <h2>Division Console</h2>
+      <h2>{t(locale, 'divisionConsole')}</h2>
       <p>
-        Active operator: <strong>{nickname}</strong>. Mode: <strong>{mode}</strong>. Difficulty:{' '}
+        {t(locale, 'activeOperator')}: <strong>{nickname}</strong>. {t(locale, 'mode')}: <strong>{mode}</strong>. {t(locale, 'difficulty')}:{' '}
         <strong>{runOptions.mode === 'FIRST_SHIFT' ? 'STANDARD' : selectedDifficulty}</strong>.
       </p>
+      {mode === 'TIMED' && <p>{locale === 'ru' ? `Лимит времени: ${runOptions.timeLimitSeconds}s.` : `Time limit: ${runOptions.timeLimitSeconds}s.`}</p>}
+      {(mode === 'ENDLESS' || mode === 'DAILY' || mode === 'TIMED') && (
+        <button type="button" onClick={onTogglePause}>
+          {paused ? t(locale, 'resume') : t(locale, 'pause')}
+        </button>
+      )}
 
       <div className="panel panel-console">
         <div className="metrics-grid">
@@ -282,7 +305,9 @@ export function PlayPage() {
         </div>
       )}
 
-      {(mode === 'ENDLESS' || mode === 'FIRST_SHIFT' || (dailyChallenge.data && dailyStarted)) && <PhaserGameCanvas runOptions={runOptions} />}
+      {(mode === 'ENDLESS' || mode === 'FIRST_SHIFT' || mode === 'TIMED' || (dailyChallenge.data && dailyStarted)) && (
+        <PhaserGameCanvas runOptions={runOptions} />
+      )}
 
       {showBriefing && (
         <div className="panel panel-accent">

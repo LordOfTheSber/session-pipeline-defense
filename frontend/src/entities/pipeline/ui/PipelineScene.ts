@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import type { Difficulty } from '@/shared/types/api';
+import type { Locale } from '@/shared/lib/i18n';
 
 type SessionArchetype = 'LIGHT' | 'BATCH' | 'VALIDATOR';
 type DataArchetype = 'PACKET' | 'HEAVY_DOCUMENT' | 'CORRUPTED_DATA' | 'BURST_TRAFFIC';
@@ -69,17 +70,19 @@ type RunSummaryPayload = {
   systemHealthEnd: number;
   activeSessionPeak: number;
   score: number;
-  mode: 'ENDLESS' | 'DAILY' | 'FIRST_SHIFT';
+  mode: 'ENDLESS' | 'DAILY' | 'FIRST_SHIFT' | 'TIMED';
   difficulty: Difficulty;
   challengeDate?: string;
   challengeSeed?: number;
 };
 
 export type PipelineRunOptions = {
-  mode: 'ENDLESS' | 'DAILY' | 'FIRST_SHIFT';
+  mode: 'ENDLESS' | 'DAILY' | 'FIRST_SHIFT' | 'TIMED';
   difficulty: Difficulty;
   challengeDate?: string;
   challengeSeed?: number;
+  timeLimitSeconds?: number;
+  locale?: Locale;
 };
 
 export type PipelineEventType =
@@ -117,7 +120,7 @@ const COLUMN_COUNT = 9;
 const CELL_WIDTH = 84;
 const LANE_HEIGHT = 78;
 const BOARD_X = 84;
-const BOARD_Y = 104;
+const BOARD_Y = 128;
 const STARTING_CREDITS = 100;
 const STARTING_SYSTEM_HEALTH = 5;
 const CREDITS_REGEN_PER_SECOND = 10;
@@ -228,6 +231,7 @@ const DIFFICULTY_TUNING: Record<Difficulty, DifficultyTuning> = {
 export const RUN_COMPLETE_EVENT = 'session-defense:run-complete';
 export const PIPELINE_EVENT = 'session-defense:game-event';
 export const HUD_UPDATE_EVENT = 'session-defense:hud-update';
+export const PIPELINE_PAUSE_EVENT = 'session-defense:pause-toggle';
 const ARIA_LINE_EVENT = 'session-defense:aria-scripted-line';
 const FEEDBACK_FLASH_TTL_MS = 320;
 
@@ -278,9 +282,13 @@ export class PipelineScene extends Phaser.Scene {
 
   private sentWave25Hook = false;
 
+  private isPaused = false;
+
+  private pauseOverlay?: Phaser.GameObjects.Text;
+
   constructor(runOptions?: PipelineRunOptions) {
     super('PipelineScene');
-    this.runOptions = runOptions ?? { mode: 'ENDLESS', difficulty: 'STANDARD' };
+    this.runOptions = runOptions ?? { mode: 'ENDLESS', difficulty: 'STANDARD', locale: 'en' };
     this.difficultyTuning = DIFFICULTY_TUNING[this.runOptions.difficulty];
     this.credits = this.difficultyTuning.startingCredits;
     this.systemHealth = this.difficultyTuning.startingSystemHealth;
@@ -316,14 +324,22 @@ export class PipelineScene extends Phaser.Scene {
     });
 
     this.renderHud();
-    this.setMessage('Use keys 1-3 to pick a Session, then click a lane cell to deploy.');
+    this.setMessage(
+      this.runOptions.locale === 'ru'
+        ? 'Клавиши 1-3 выбирают сессию. Кликните по ячейке для установки.'
+        : 'Use keys 1-3 to pick a Session, then click a lane cell to deploy.',
+    );
     this.renderSelectionHint();
     this.emitPipelineEvent({ type: 'run.start', wave: 1, integrity: this.systemHealth });
     this.emitPipelineEvent({ type: 'wave.start', wave: 1, integrity: this.systemHealth });
+    window.addEventListener(PIPELINE_PAUSE_EVENT, this.onPauseEvent);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      window.removeEventListener(PIPELINE_PAUSE_EVENT, this.onPauseEvent);
+    });
   }
 
   update(_: number, deltaMs: number) {
-    if (this.isRunOver) {
+    if (this.isRunOver || this.isPaused) {
       return;
     }
 
@@ -347,18 +363,23 @@ export class PipelineScene extends Phaser.Scene {
     this.updateDataPackets(dt);
     this.updateWaveScaling();
 
+    if (this.runOptions.mode === 'TIMED' && this.runOptions.timeLimitSeconds && this.elapsedSeconds >= this.runOptions.timeLimitSeconds) {
+      this.completeTimedRun();
+      return;
+    }
+
     this.activeSessionPeak = Math.max(this.activeSessionPeak, this.sessions.size);
     this.renderHud();
   }
 
   private drawBoard() {
-    this.add.text(18, 56, 'Session Pipeline Defense — Phase 9 UX & Balance Polish', {
+    this.add.text(18, 42, this.runOptions.locale === 'ru' ? 'Session Pipeline Defense — Оперативная смена' : 'Session Pipeline Defense — Live Shift Console', {
       fontFamily: 'Arial',
       fontSize: '18px',
       color: '#8bd3ff',
     });
 
-    this.add.text(18, 78, '1 Light | 2 Batch | 3 Validator', {
+    this.add.text(18, 68, this.runOptions.locale === 'ru' ? '1 Лёгкая | 2 Пакетная | 3 Валидатор' : '1 Light | 2 Batch | 3 Validator', {
       fontFamily: 'monospace',
       fontSize: '14px',
       color: '#c4b5fd',
@@ -391,7 +412,7 @@ export class PipelineScene extends Phaser.Scene {
 
   private registerPlacementInput() {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (this.isRunOver) {
+      if (this.isRunOver || this.isPaused) {
         this.scene.restart();
         return;
       }
@@ -625,6 +646,38 @@ export class PipelineScene extends Phaser.Scene {
     );
   }
 
+  private completeTimedRun() {
+    this.isRunOver = true;
+    this.setMessage(this.runOptions.locale === 'ru' ? 'Лимит времени достигнут. Смена завершена.' : 'Time limit reached. Shift completed.');
+
+    const summary = this.buildRunSummary();
+    this.add.rectangle(450, 260, 760, 200, 0x020617, 0.88).setStrokeStyle(2, 0x22d3ee).setDepth(40);
+    this.add
+      .text(450, 220, this.runOptions.locale === 'ru' ? 'СМЕНА ЗАВЕРШЕНА' : 'SHIFT COMPLETE', {
+        fontFamily: 'monospace',
+        fontSize: '40px',
+        color: '#67e8f9',
+      })
+      .setOrigin(0.5)
+      .setDepth(41);
+
+    this.add
+      .text(450, 276, `Processed ${summary.processedCount} | Wave ${summary.waveReached} | Score ${summary.score}`, {
+        fontFamily: 'monospace',
+        fontSize: '20px',
+        color: '#bae6fd',
+      })
+      .setOrigin(0.5)
+      .setDepth(41);
+
+    window.dispatchEvent(
+      new CustomEvent<RunSummaryPayload>(RUN_COMPLETE_EVENT, {
+        detail: summary,
+      }),
+    );
+  }
+
+
   private buildRunSummary(): RunSummaryPayload {
     const efficiencyBonus = Math.floor((this.processedCount * 100) / Math.max(1, this.creditsSpent + 20));
     const rawScore = this.processedCount * 10 + this.wave * 100 + Math.floor(this.elapsedSeconds * 2) + efficiencyBonus;
@@ -835,6 +888,28 @@ export class PipelineScene extends Phaser.Scene {
       }),
     );
   }
+
+  private onPauseEvent = (event: Event) => {
+    const customEvent = event as CustomEvent<{ paused: boolean }>;
+    this.isPaused = customEvent.detail.paused;
+
+    if (this.isPaused) {
+      this.pauseOverlay = this.add
+        .text(450, 260, this.runOptions.locale === 'ru' ? 'ПАУЗА' : 'PAUSED', {
+          fontFamily: 'monospace',
+          fontSize: '52px',
+          color: '#e2e8f0',
+          backgroundColor: '#020617',
+          padding: { x: 18, y: 10 },
+        })
+        .setOrigin(0.5)
+        .setDepth(50);
+      return;
+    }
+
+    this.pauseOverlay?.destroy();
+    this.pauseOverlay = undefined;
+  };
 
   private flashIntegrityLoss() {
     const overlay = this.add.rectangle(450, 260, 900, 520, 0xef4444, 0).setDepth(18);

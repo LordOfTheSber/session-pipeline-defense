@@ -12,6 +12,7 @@ import {
   setStoredDifficulty,
   setStoredNickname,
 } from '@/shared/lib/profilePrefs';
+import { getStoredLanguage, setStoredLanguage, t, type Locale } from '@/shared/lib/i18n';
 import type { Difficulty } from '@/shared/types/api';
 import { ErrorState, LoadingState } from '@/shared/ui/ResourceState';
 
@@ -22,6 +23,7 @@ export function SettingsPage() {
   const [difficulty, setDifficulty] = useState<Difficulty>(getStoredDifficulty());
   const [audioPrefs, setAudioPrefs] = useState(getConsoleAudioPrefs());
   const [consolePrefs, setConsolePrefs] = useState(getConsolePreferences());
+  const [language, setLanguage] = useState<Locale>(getStoredLanguage());
   const [status, setStatus] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -42,16 +44,23 @@ export function SettingsPage() {
       setStoredDifficulty(profile.preferredDifficulty);
       setConsoleAudioPrefs(audioPrefs);
       setConsolePreferences(consolePrefs);
+      setStoredLanguage(language);
       setStatus(`Saved console preferences for ${profile.nickname}.`);
     } catch {
       setSaveError('Could not persist profile preferences to backend.');
     }
   };
 
+  const locale = language;
+
   return (
     <section>
-      <h2>CONSOLE PREFERENCES</h2>
-      <p>Persist nickname, default difficulty, ARIA behavior, and accessibility toggles.</p>
+      <h2>{locale === 'ru' ? 'НАСТРОЙКИ КОНСОЛИ' : 'CONSOLE PREFERENCES'}</h2>
+      <p>
+        {locale === 'ru'
+          ? 'Сохраните никнейм, сложность по умолчанию, поведение ARIA и параметры доступности.'
+          : 'Persist nickname, default difficulty, ARIA behavior, and accessibility toggles.'}
+      </p>
 
       {health.isLoading && <LoadingState label="backend health" />}
       {health.error && (
@@ -82,6 +91,12 @@ export function SettingsPage() {
           <option value="STANDARD">STANDARD</option>
           <option value="HARDENED">HARDENED</option>
           <option value="NIGHTMARE">NIGHTMARE</option>
+        </select>
+
+        <label htmlFor="language">{t(locale, 'language')}</label>
+        <select id="language" value={language} onChange={(event) => setLanguage(event.target.value as Locale)}>
+          <option value="en">{t(locale, 'english')}</option>
+          <option value="ru">{t(locale, 'russian')}</option>
         </select>
 
         <h3>ARIA Channel</h3>
@@ -145,7 +160,7 @@ export function SettingsPage() {
           onChange={(event) => setAudioPrefs((prev) => ({ ...prev, ariaBeepVolume: Number(event.target.value) }))}
         />
 
-        <button type="submit">Save Preferences</button>
+        <button type="submit">{t(locale, 'savePreferences')}</button>
         {status && <p>{status}</p>}
         {saveError && <p>{saveError}</p>}
       </form>

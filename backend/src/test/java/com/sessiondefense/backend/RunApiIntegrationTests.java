@@ -202,4 +202,31 @@ class RunApiIntegrationTests {
                 .andExpect(jsonPath("$[0].difficulty").value("HARDENED"))
                 .andExpect(jsonPath("$[0].score").value(2395));
     }
+
+    @Test
+    void shouldPersistNarrativeProgressWithoutDuplicates() throws Exception {
+        mockMvc.perform(get("/api/narrative/state?nickname=operator-seven"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nickname").value("operator-seven"))
+                .andExpect(jsonPath("$.seenBeatKeys").isArray())
+                .andExpect(jsonPath("$.seenBeatKeys").isEmpty());
+
+        Map<String, Object> payload = Map.of(
+                "nickname", "operator-seven",
+                "beatKey", "act1.init_shift"
+        );
+
+        mockMvc.perform(post("/api/narrative/seen")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nickname").value("operator-seven"))
+                .andExpect(jsonPath("$.seenBeatKeys[0]").value("act1.init_shift"));
+
+        mockMvc.perform(post("/api/narrative/seen")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.seenBeatKeys.length()").value(1));
+    }
 }

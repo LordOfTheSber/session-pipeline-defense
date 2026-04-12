@@ -4,6 +4,8 @@ import type {
   Difficulty,
   HealthResponse,
   LeaderboardEntry,
+  NarrativeSeenRequest,
+  NarrativeStateResponse,
   PlayerProfile,
   RunHistoryEntry,
   RunSubmissionRequest,
@@ -55,5 +57,17 @@ export const gameApi = {
 
   getRunSummary(runId: string): Promise<RunSummary> {
     return fetchJson<RunSummary>(`/api/runs/${runId}`);
+  },
+
+  getNarrativeState(nickname: string): Promise<NarrativeStateResponse> {
+    const params = new URLSearchParams({ nickname });
+    return fetchJson<NarrativeStateResponse>(`/api/narrative/state?${params.toString()}`);
+  },
+
+  markNarrativeSeen(payload: NarrativeSeenRequest): Promise<NarrativeStateResponse> {
+    return fetchJson<NarrativeStateResponse>('/api/narrative/seen', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 };

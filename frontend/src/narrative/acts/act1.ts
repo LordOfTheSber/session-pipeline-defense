@@ -1,0 +1,58 @@
+import type { AriaLine, StoryBeat } from '../types';
+
+export const act1Beats: StoryBeat[] = [
+  {
+    key: 'act1.init_shift',
+    act: 'ACT_I_ONBOARDING',
+    title: 'First Shift Online',
+    summary: 'ARIA introduces Operator-7 to The Pipeline Division and first deployment steps.',
+    triggers: ['run.start', 'session.first_placed'],
+  },
+  {
+    key: 'act1.first_loss',
+    act: 'ACT_I_ONBOARDING',
+    title: 'Integrity Breach',
+    summary: 'The first leak teaches the overload cost and stakes of the Surge.',
+    triggers: ['data.first_leaked', 'health.critical', 'run.loss'],
+  },
+  {
+    key: 'act1.surge_contact',
+    act: 'ACT_I_ONBOARDING',
+    title: 'First Corrupted Signal',
+    summary: 'Corrupted traffic appears and ARIA hints the anomaly is not random.',
+    triggers: ['data.corrupted_first_seen', 'wave.reached_5'],
+  },
+];
+
+export const act1AriaLines: AriaLine[] = [
+  { id: 'aria-001', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'run.start', priority: 100, cooldownMs: 0, text: 'Operator-7, link established. Welcome to The Pipeline Division.' },
+  { id: 'aria-002', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'run.start', priority: 95, cooldownMs: 8000, text: 'You hold the Session Pool. Keep throughput stable, keep integrity alive.' },
+  { id: 'aria-003', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'run.start', priority: 90, cooldownMs: 12000, text: 'Surge pressure is low... for now.' },
+  { id: 'aria-004', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'session.first_placed', priority: 100, cooldownMs: 0, text: 'First Session deployed. Good. Watch its TTL.' },
+  { id: 'aria-005', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'session.first_placed', priority: 92, cooldownMs: 7000, text: 'Capacity is finite. Every unit burns out eventually.' },
+  { id: 'aria-006', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'wave.first_start', priority: 85, cooldownMs: 6000, text: 'Cycle one begins. Packet stream inbound.' },
+  { id: 'aria-007', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'wave.first_start', priority: 84, cooldownMs: 10000, text: 'Spend Credits with intent. Panic spending collapses lanes.' },
+  { id: 'aria-008', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'session.first_expired', priority: 100, cooldownMs: 0, text: 'Session expired. Replace it before the lane opens.' },
+  { id: 'aria-009', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'session.first_expired', priority: 88, cooldownMs: 9000, text: 'This is normal attrition, not failure.' },
+  { id: 'aria-010', act: 'ACT_I_ONBOARDING', beatKey: 'act1.surge_contact', trigger: 'data.corrupted_first_seen', priority: 100, cooldownMs: 0, text: 'Corrupted signature detected. That pattern should not exist.' },
+  { id: 'aria-011', act: 'ACT_I_ONBOARDING', beatKey: 'act1.surge_contact', trigger: 'data.corrupted_first_seen', priority: 96, cooldownMs: 8000, text: 'Validator Sessions perform better here. Adapt loadout.' },
+  { id: 'aria-012', act: 'ACT_I_ONBOARDING', beatKey: 'act1.surge_contact', trigger: 'data.corrupted_first_seen', priority: 89, cooldownMs: 15000, text: 'Archive note: same marker appeared in the old incident...' },
+  { id: 'aria-013', act: 'ACT_I_ONBOARDING', beatKey: 'act1.surge_contact', trigger: 'wave.reached_5', priority: 85, cooldownMs: 0, text: 'Cycle five. You are still standing. Most juniors are not.' },
+  { id: 'aria-014', act: 'ACT_I_ONBOARDING', beatKey: 'act1.surge_contact', trigger: 'wave.reached_5', priority: 82, cooldownMs: 8000, text: 'Surge behavior is clustering by lane. That is... unusual.' },
+  { id: 'aria-015', act: 'ACT_I_ONBOARDING', beatKey: 'act1.surge_contact', trigger: 'wave.reached_5', priority: 80, cooldownMs: 11000, text: 'Keep logs. Every cycle is evidence.' },
+  { id: 'aria-016', act: 'ACT_I_ONBOARDING', beatKey: 'act1.first_loss', trigger: 'data.first_leaked', priority: 100, cooldownMs: 0, text: 'Leak confirmed. Integrity dropping.' },
+  { id: 'aria-017', act: 'ACT_I_ONBOARDING', beatKey: 'act1.first_loss', trigger: 'data.first_leaked', priority: 95, cooldownMs: 7000, text: 'Seal that lane. You can recover this state.' },
+  { id: 'aria-018', act: 'ACT_I_ONBOARDING', beatKey: 'act1.first_loss', trigger: 'health.critical', priority: 100, cooldownMs: 0, text: 'Integrity critical. Route discipline now.' },
+  { id: 'aria-019', act: 'ACT_I_ONBOARDING', beatKey: 'act1.first_loss', trigger: 'health.critical', priority: 93, cooldownMs: 8000, text: 'Do not chase every lane. Protect the collapse point.' },
+  { id: 'aria-020', act: 'ACT_I_ONBOARDING', beatKey: 'act1.first_loss', trigger: 'health.critical', priority: 86, cooldownMs: 14000, text: 'Breathe. Allocate. Execute.' },
+  { id: 'aria-021', act: 'ACT_I_ONBOARDING', beatKey: 'act1.first_loss', trigger: 'run.loss', priority: 100, cooldownMs: 0, text: 'System breach recorded. Shift ended.' },
+  { id: 'aria-022', act: 'ACT_I_ONBOARDING', beatKey: 'act1.first_loss', trigger: 'run.loss', priority: 95, cooldownMs: 0, text: 'Failure is a metric, not a verdict. We run again.' },
+  { id: 'aria-023', act: 'ACT_I_ONBOARDING', beatKey: 'act1.first_loss', trigger: 'run.loss', priority: 88, cooldownMs: 0, text: 'I am tagging this event for your dossier.' },
+  { id: 'aria-024', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'run.win', priority: 100, cooldownMs: 0, text: 'Shift complete. Throughput exceeded baseline.' },
+  { id: 'aria-025', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'run.win', priority: 92, cooldownMs: 0, text: 'Operator-7, your decisions are becoming predictable... in a good way.' },
+  { id: 'aria-026', act: 'ACT_I_ONBOARDING', beatKey: 'act1.init_shift', trigger: 'run.win', priority: 86, cooldownMs: 0, text: 'Do not get comfortable. Surge adapts.' },
+  { id: 'aria-027', act: 'ACT_I_ONBOARDING', beatKey: 'act1.surge_contact', trigger: 'run.start', priority: 70, cooldownMs: 20000, text: 'If you hear pauses in my voice, ignore them.' },
+  { id: 'aria-028', act: 'ACT_I_ONBOARDING', beatKey: 'act1.surge_contact', trigger: 'run.start', priority: 68, cooldownMs: 30000, text: 'Archive retention in this sector is inconsistent. I am investigating.' },
+  { id: 'aria-029', act: 'ACT_I_ONBOARDING', beatKey: 'act1.surge_contact', trigger: 'wave.first_start', priority: 66, cooldownMs: 16000, text: 'Some packets are not packets. You will see.' },
+  { id: 'aria-030', act: 'ACT_I_ONBOARDING', beatKey: 'act1.surge_contact', trigger: 'run.loss', priority: 64, cooldownMs: 0, text: 'One more breach, one more clue...' },
+];

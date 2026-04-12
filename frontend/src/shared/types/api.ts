@@ -76,3 +76,13 @@ export interface DailyChallengeResponse {
   challengeModifiers: Record<string, number>;
   leaderboardWindowKey: string;
 }
+
+export interface NarrativeStateResponse {
+  nickname: string;
+  seenBeatKeys: string[];
+}
+
+export interface NarrativeSeenRequest {
+  nickname: string;
+  beatKey: string;
+}

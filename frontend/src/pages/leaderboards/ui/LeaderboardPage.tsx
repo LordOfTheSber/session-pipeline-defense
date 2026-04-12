@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { gameApi } from '@/shared/api/gameApi';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
 import type { Difficulty, LeaderboardEntry } from '@/shared/types/api';
@@ -62,14 +62,23 @@ export function LeaderboardPage() {
     };
   }, [autoRefresh]);
 
-  const globalLeaderboard = useAsyncResource(
-    () => gameApi.getGlobalLeaderboard(LEADERBOARD_LIMIT, difficulty),
+  const loadGlobalLeaderboard = useCallback(
+    () => {
+      void refreshTick;
+      return gameApi.getGlobalLeaderboard(LEADERBOARD_LIMIT, difficulty);
+    },
     [difficulty, refreshTick],
   );
-  const dailyLeaderboard = useAsyncResource(
-    () => gameApi.getDailyLeaderboard(today, LEADERBOARD_LIMIT, difficulty),
+  const globalLeaderboard = useAsyncResource(loadGlobalLeaderboard);
+
+  const loadDailyLeaderboard = useCallback(
+    () => {
+      void refreshTick;
+      return gameApi.getDailyLeaderboard(today, LEADERBOARD_LIMIT, difficulty);
+    },
     [today, difficulty, refreshTick],
   );
+  const dailyLeaderboard = useAsyncResource(loadDailyLeaderboard);
 
   return (
     <section>

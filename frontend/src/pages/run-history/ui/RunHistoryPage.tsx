@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { gameApi } from '@/shared/api/gameApi';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
 import { getStoredNickname } from '@/shared/lib/profilePrefs';
@@ -5,7 +6,8 @@ import { ErrorState, LoadingState } from '@/shared/ui/ResourceState';
 
 export function RunHistoryPage() {
   const nickname = getStoredNickname();
-  const runHistory = useAsyncResource(() => gameApi.getPlayerRuns(nickname, 15), [nickname]);
+  const loadRunHistory = useCallback(() => gameApi.getPlayerRuns(nickname, 15), [nickname]);
+  const runHistory = useAsyncResource(loadRunHistory);
 
   return (
     <section>

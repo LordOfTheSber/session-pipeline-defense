@@ -6,7 +6,7 @@ interface AsyncResourceState<T> {
   error: string | null;
 }
 
-export function useAsyncResource<T>(loader: () => Promise<T>, deps: readonly unknown[]): AsyncResourceState<T> {
+export function useAsyncResource<T>(loader: () => Promise<T>): AsyncResourceState<T> {
   const [state, setState] = useState<AsyncResourceState<T>>({
     data: null,
     isLoading: true,
@@ -15,8 +15,6 @@ export function useAsyncResource<T>(loader: () => Promise<T>, deps: readonly unk
 
   useEffect(() => {
     let isMounted = true;
-
-    setState({ data: null, isLoading: true, error: null });
 
     loader()
       .then((data) => {
@@ -34,7 +32,7 @@ export function useAsyncResource<T>(loader: () => Promise<T>, deps: readonly unk
     return () => {
       isMounted = false;
     };
-  }, deps);
+  }, [loader]);
 
   return state;
 }

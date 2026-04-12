@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { FormEvent } from 'react';
 import { gameApi } from '@/shared/api/gameApi';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
@@ -7,7 +7,8 @@ import type { Difficulty } from '@/shared/types/api';
 import { ErrorState, LoadingState } from '@/shared/ui/ResourceState';
 
 export function SettingsPage() {
-  const health = useAsyncResource(() => gameApi.getHealth(), []);
+  const loadHealth = useCallback(() => gameApi.getHealth(), []);
+  const health = useAsyncResource(loadHealth);
   const [nickname, setNickname] = useState(getStoredNickname());
   const [difficulty, setDifficulty] = useState<Difficulty>(getStoredDifficulty());
   const [status, setStatus] = useState<string | null>(null);

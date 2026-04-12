@@ -25,7 +25,10 @@ export function RunHistoryPage() {
       {runHistory.data && (
         <div className="panel">
           {runHistory.data.length === 0 ? (
-            <p>No runs found yet for this nickname.</p>
+            <div className="empty-state">
+              <p>No runs found yet for this nickname.</p>
+              <p>Start an Endless run, finish once, and this table will populate automatically.</p>
+            </div>
           ) : (
             <table className="leaderboard-table">
               <thead>

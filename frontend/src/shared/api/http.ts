@@ -6,12 +6,14 @@ const recentGetResponses = new Map<string, { timestamp: number; payload: unknown
 export class ApiError extends Error {
   readonly status: number;
   readonly path: string;
+  readonly details?: string[];
 
-  constructor(message: string, status: number, path: string) {
+  constructor(message: string, status: number, path: string, details?: string[]) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.path = path;
+    this.details = details;
   }
 }
 
@@ -43,8 +45,17 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
     });
 
     if (!response.ok) {
-      const body = await response.text();
-      throw new ApiError(body || `Request failed with status ${response.status}`, response.status, path);
+      const rawBody = await response.text();
+      let parsedMessage: string | undefined;
+      let parsedDetails: string[] | undefined;
+      try {
+        const parsed = JSON.parse(rawBody) as { message?: string; details?: string[] };
+        parsedMessage = parsed.message;
+        parsedDetails = parsed.details;
+      } catch {
+        // Fall back to plaintext body below.
+      }
+      throw new ApiError(parsedMessage || rawBody || `Request failed with status ${response.status}`, response.status, path, parsedDetails);
     }
 
     const payload = (await response.json()) as T;

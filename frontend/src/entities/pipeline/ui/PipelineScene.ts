@@ -90,7 +90,7 @@ const BOARD_X = 84;
 const BOARD_Y = 104;
 const STARTING_CREDITS = 100;
 const STARTING_SYSTEM_HEALTH = 5;
-const CREDITS_REGEN_PER_SECOND = 9;
+const CREDITS_REGEN_PER_SECOND = 10;
 
 const SESSION_SPECS: Record<SessionArchetype, SessionSpec> = {
   LIGHT: {
@@ -196,6 +196,7 @@ const DIFFICULTY_TUNING: Record<Difficulty, DifficultyTuning> = {
 };
 
 const RUN_COMPLETE_EVENT = 'session-defense:run-complete';
+const FEEDBACK_FLASH_TTL_MS = 320;
 
 export class PipelineScene extends Phaser.Scene {
   private sessions = new Map<string, SessionUnit>();
@@ -225,6 +226,8 @@ export class PipelineScene extends Phaser.Scene {
   private hudText?: Phaser.GameObjects.Text;
 
   private messageText?: Phaser.GameObjects.Text;
+
+  private helperText?: Phaser.GameObjects.Text;
 
   private selectedSessionType: SessionArchetype = 'LIGHT';
 
@@ -267,9 +270,15 @@ export class PipelineScene extends Phaser.Scene {
       fontSize: '14px',
       color: '#93c5fd',
     });
+    this.helperText = this.add.text(18, 512, '', {
+      fontFamily: 'monospace',
+      fontSize: '12px',
+      color: '#86efac',
+    });
 
     this.renderHud();
-    this.setMessage('Use keys 1-3 to pick Session type, then click a cell to deploy.');
+    this.setMessage('Use keys 1-3 to pick a Session, then click a lane cell to deploy.');
+    this.renderSelectionHint();
   }
 
   update(_: number, deltaMs: number) {
@@ -302,7 +311,7 @@ export class PipelineScene extends Phaser.Scene {
   }
 
   private drawBoard() {
-    this.add.text(18, 56, 'Session Pipeline Defense — Phase 8 Replayability', {
+    this.add.text(18, 56, 'Session Pipeline Defense — Phase 9 UX & Balance Polish', {
       fontFamily: 'Arial',
       fontSize: '18px',
       color: '#8bd3ff',
@@ -355,12 +364,14 @@ export class PipelineScene extends Phaser.Scene {
       const key = this.cellKey(lane, column);
       if (this.sessions.has(key)) {
         this.setMessage('Session already active in this cell.');
+        this.flashLane(lane, 0xf97316);
         return;
       }
 
       const spec = SESSION_SPECS[this.selectedSessionType];
       if (this.credits < spec.cost) {
         this.setMessage(`${spec.label} requires ${spec.cost} Credits.`);
+        this.flashLane(lane, 0xef4444);
         return;
       }
 
@@ -368,6 +379,7 @@ export class PipelineScene extends Phaser.Scene {
       this.creditsSpent += spec.cost;
       this.deploySession(lane, column, this.selectedSessionType);
       this.setMessage(`${spec.label} deployed in Lane ${lane + 1}.`);
+      this.flashLane(lane, 0x22d3ee);
       this.renderHud();
     });
   }
@@ -376,6 +388,7 @@ export class PipelineScene extends Phaser.Scene {
     this.selectedSessionType = type;
     const spec = SESSION_SPECS[type];
     this.setMessage(`${spec.label} selected (${spec.cost} Credits).`);
+    this.renderSelectionHint();
     this.renderHud();
   }
 
@@ -445,6 +458,11 @@ export class PipelineScene extends Phaser.Scene {
       const capacitySpent = session.processedCount >= spec.capacity;
       const ttlExpired = session.ttlSeconds <= 0;
       if (ttlExpired || capacitySpent) {
+        if (ttlExpired) {
+          this.setMessage(`${spec.label} in Lane ${session.lane + 1} expired (TTL).`);
+        } else {
+          this.setMessage(`${spec.label} in Lane ${session.lane + 1} retired (capacity spent).`);
+        }
         this.destroySession(key, session);
       }
     }
@@ -486,6 +504,7 @@ export class PipelineScene extends Phaser.Scene {
         packet.sprite.destroy();
         this.systemHealth -= 1;
         this.setMessage(`Overload in Lane ${packet.lane + 1}. System health reduced.`);
+        this.flashLane(packet.lane, 0xdc2626);
 
         if (this.systemHealth <= 0) {
           this.triggerSystemFailure();
@@ -672,6 +691,15 @@ export class PipelineScene extends Phaser.Scene {
     this.messageText?.setText(message);
   }
 
+  private renderSelectionHint() {
+    const spec = SESSION_SPECS[this.selectedSessionType];
+    const dps = (spec.damage / spec.fireRateSeconds).toFixed(1);
+    const corruptedHint = spec.corruptedMultiplier ? ` | x${spec.corruptedMultiplier} vs Corrupted Data` : '';
+    this.helperText?.setText(
+      `${spec.label}: TTL ${spec.ttlSeconds}s | Capacity ${spec.capacity} | DPS ${dps}${corruptedHint}`,
+    );
+  }
+
   private cellKey(lane: number, column: number): string {
     return `${lane}-${column}`;
   }
@@ -682,5 +710,17 @@ export class PipelineScene extends Phaser.Scene {
     }
 
     return Phaser.Math.Between(min, max);
+  }
+
+  private flashLane(lane: number, color: number) {
+    const y = BOARD_Y + lane * LANE_HEIGHT;
+    const overlay = this.add
+      .rectangle(BOARD_X + (COLUMN_COUNT * CELL_WIDTH) / 2, y, COLUMN_COUNT * CELL_WIDTH, LANE_HEIGHT - 6, color, 0.22)
+      .setStrokeStyle(1, color)
+      .setDepth(8);
+
+    this.time.delayedCall(FEEDBACK_FLASH_TTL_MS, () => {
+      overlay.destroy();
+    });
   }
 }

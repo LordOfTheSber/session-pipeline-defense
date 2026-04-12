@@ -4,9 +4,11 @@ import { gameApi } from '@/shared/api/gameApi';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
 import {
   getConsoleAudioPrefs,
+  getConsolePreferences,
   getStoredDifficulty,
   getStoredNickname,
   setConsoleAudioPrefs,
+  setConsolePreferences,
   setStoredDifficulty,
   setStoredNickname,
 } from '@/shared/lib/profilePrefs';
@@ -19,6 +21,7 @@ export function SettingsPage() {
   const [nickname, setNickname] = useState(getStoredNickname());
   const [difficulty, setDifficulty] = useState<Difficulty>(getStoredDifficulty());
   const [audioPrefs, setAudioPrefs] = useState(getConsoleAudioPrefs());
+  const [consolePrefs, setConsolePrefs] = useState(getConsolePreferences());
   const [status, setStatus] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -38,7 +41,8 @@ export function SettingsPage() {
       setStoredNickname(profile.nickname);
       setStoredDifficulty(profile.preferredDifficulty);
       setConsoleAudioPrefs(audioPrefs);
-      setStatus(`Saved profile ${profile.nickname} with preferred difficulty ${profile.preferredDifficulty}.`);
+      setConsolePreferences(consolePrefs);
+      setStatus(`Saved console preferences for ${profile.nickname}.`);
     } catch {
       setSaveError('Could not persist profile preferences to backend.');
     }
@@ -46,8 +50,8 @@ export function SettingsPage() {
 
   return (
     <section>
-      <h2>Profile & Settings</h2>
-      <p>Persist nickname and preferred difficulty for endless mode defaults and run history.</p>
+      <h2>CONSOLE PREFERENCES</h2>
+      <p>Persist nickname, default difficulty, ARIA behavior, and accessibility toggles.</p>
 
       {health.isLoading && <LoadingState label="backend health" />}
       {health.error && (
@@ -69,22 +73,47 @@ export function SettingsPage() {
       )}
 
       <form className="panel settings-form" onSubmit={onSave}>
-        <h3>Player Profile</h3>
+        <h3>Operator Profile</h3>
         <label htmlFor="nickname">Nickname</label>
         <input id="nickname" value={nickname} maxLength={50} onChange={(event) => setNickname(event.target.value)} />
 
         <label htmlFor="difficulty">Preferred Difficulty</label>
-        <select
-          id="difficulty"
-          value={difficulty}
-          onChange={(event) => setDifficulty(event.target.value as Difficulty)}
-        >
+        <select id="difficulty" value={difficulty} onChange={(event) => setDifficulty(event.target.value as Difficulty)}>
           <option value="STANDARD">STANDARD</option>
           <option value="HARDENED">HARDENED</option>
           <option value="NIGHTMARE">NIGHTMARE</option>
         </select>
 
-        <button type="submit">Save Profile</button>
+        <h3>ARIA Channel</h3>
+        <label htmlFor="verbosity">ARIA verbosity</label>
+        <select
+          id="verbosity"
+          value={consolePrefs.ariaVerbosity}
+          onChange={(event) => setConsolePrefs((prev) => ({ ...prev, ariaVerbosity: event.target.value as 'LOW' | 'NORMAL' | 'HIGH' }))}
+        >
+          <option value="LOW">LOW</option>
+          <option value="NORMAL">NORMAL</option>
+          <option value="HIGH">HIGH</option>
+        </select>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={consolePrefs.crtEffectEnabled}
+            onChange={(event) => setConsolePrefs((prev) => ({ ...prev, crtEffectEnabled: event.target.checked }))}
+          />{' '}
+          CRT effect
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={consolePrefs.reducedMotion}
+            onChange={(event) => setConsolePrefs((prev) => ({ ...prev, reducedMotion: event.target.checked }))}
+          />{' '}
+          Reduced motion
+        </label>
+
         <h3>Console Audio Mix</h3>
         <label htmlFor="uiVolume">UI clicks: {audioPrefs.uiVolume}%</label>
         <input
@@ -115,6 +144,8 @@ export function SettingsPage() {
           value={audioPrefs.ariaBeepVolume}
           onChange={(event) => setAudioPrefs((prev) => ({ ...prev, ariaBeepVolume: Number(event.target.value) }))}
         />
+
+        <button type="submit">Save Preferences</button>
         {status && <p>{status}</p>}
         {saveError && <p>{saveError}</p>}
       </form>

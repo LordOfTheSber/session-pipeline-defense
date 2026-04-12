@@ -75,6 +75,10 @@ export interface DailyChallengeResponse {
   seed: number;
   challengeModifiers: Record<string, number>;
   leaderboardWindowKey: string;
+  logTitle: string;
+  logExcerpt: string;
+  actReference: string;
+  narrativeBeatKey: string;
 }
 
 export interface NarrativeStateResponse {

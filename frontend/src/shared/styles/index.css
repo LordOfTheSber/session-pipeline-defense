@@ -170,3 +170,14 @@ select {
   color: #e0f2fe;
   min-height: 1.35rem;
 }
+
+.daily-mode-shell .panel-console,
+.panel-daily-log {
+  border-color: #b45309;
+  background: rgba(120, 53, 15, 0.26);
+}
+
+.daily-mode-shell .aria-panel {
+  border-color: #d97706;
+  background: rgba(146, 64, 14, 0.3);
+}

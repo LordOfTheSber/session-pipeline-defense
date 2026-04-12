@@ -228,6 +228,7 @@ const DIFFICULTY_TUNING: Record<Difficulty, DifficultyTuning> = {
 export const RUN_COMPLETE_EVENT = 'session-defense:run-complete';
 export const PIPELINE_EVENT = 'session-defense:game-event';
 export const HUD_UPDATE_EVENT = 'session-defense:hud-update';
+const ARIA_LINE_EVENT = 'session-defense:aria-scripted-line';
 const FEEDBACK_FLASH_TTL_MS = 320;
 
 export class PipelineScene extends Phaser.Scene {
@@ -274,6 +275,8 @@ export class PipelineScene extends Phaser.Scene {
   private sentCriticalHealthEvent = false;
 
   private sentCorruptedSeenEvent = false;
+
+  private sentWave25Hook = false;
 
   constructor(runOptions?: PipelineRunOptions) {
     super('PipelineScene');
@@ -437,6 +440,14 @@ export class PipelineScene extends Phaser.Scene {
     const y = BOARD_Y + lane * LANE_HEIGHT;
 
     const sprite = this.add.rectangle(x, y, 42, 42, spec.color, 1).setStrokeStyle(2, spec.strokeColor);
+    sprite.setScale(0.72);
+    this.tweens.add({
+      targets: sprite,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 140,
+      ease: 'Cubic.Out',
+    });
     const ttlText = this.add.text(x - 18, y - 28, `${spec.ttlSeconds}s`, {
       fontFamily: 'monospace',
       fontSize: '10px',
@@ -482,6 +493,12 @@ export class PipelineScene extends Phaser.Scene {
           target.hp -= spec.damage * damageMultiplier;
           target.lastDamagedBySessionId = session.id;
           session.fireCooldown = spec.fireRateSeconds;
+          this.tweens.add({
+            targets: target.sprite,
+            alpha: 0.55,
+            duration: 90,
+            yoyo: true,
+          });
 
           this.add
             .line(0, 0, session.sprite.x, session.sprite.y, target.sprite.x, target.sprite.y, 0x7dd3fc, 0.8)
@@ -546,6 +563,7 @@ export class PipelineScene extends Phaser.Scene {
         this.setMessage(`Overload in Lane ${packet.lane + 1}. System health reduced.`);
         this.emitPipelineEvent({ type: 'data.leaked', lane: packet.lane, wave: this.wave, integrity: this.systemHealth });
         this.flashLane(packet.lane, 0xdc2626);
+        this.flashIntegrityLoss();
 
         if (this.systemHealth <= Math.max(1, Math.floor(this.difficultyTuning.startingSystemHealth / 2)) && !this.sentCriticalHealthEvent) {
           this.sentCriticalHealthEvent = true;
@@ -628,19 +646,34 @@ export class PipelineScene extends Phaser.Scene {
   }
 
   private destroySession(key: string, session: SessionUnit) {
-    session.sprite.destroy();
-    session.ttlText.destroy();
-    session.capText.destroy();
+    this.tweens.add({
+      targets: [session.sprite, session.ttlText, session.capText],
+      alpha: 0,
+      duration: 180,
+      onComplete: () => {
+        session.sprite.destroy();
+        session.ttlText.destroy();
+        session.capText.destroy();
+      },
+    });
     this.sessions.delete(key);
   }
 
   private updateWaveScaling() {
-    const nextWave = Math.floor(this.elapsedSeconds / 15) + 1;
+    const nextWave = Math.floor(this.elapsedSeconds / 18) + 1;
     if (nextWave > this.wave) {
       this.wave = nextWave;
       this.spawnIntervalSeconds = Math.max(0.45, (2.1 - this.wave * 0.17) / this.difficultyTuning.spawnPressureMultiplier);
       this.setMessage(`Wave ${this.wave}: ingress traffic increased.`);
       this.emitPipelineEvent({ type: 'wave.start', wave: this.wave, integrity: this.systemHealth });
+      if (this.runOptions.mode === 'ENDLESS' && this.wave >= 25 && !this.sentWave25Hook) {
+        this.sentWave25Hook = true;
+        window.dispatchEvent(
+          new CustomEvent(ARIA_LINE_EVENT, {
+            detail: { line: '// ARIA: wave 25 reached... you are matching patterns from Incident-9A.' },
+          }),
+        );
+      }
     }
   }
 
@@ -801,5 +834,16 @@ export class PipelineScene extends Phaser.Scene {
         detail: payload,
       }),
     );
+  }
+
+  private flashIntegrityLoss() {
+    const overlay = this.add.rectangle(450, 260, 900, 520, 0xef4444, 0).setDepth(18);
+    this.tweens.add({
+      targets: overlay,
+      alpha: 0.16,
+      duration: 90,
+      yoyo: true,
+      onComplete: () => overlay.destroy(),
+    });
   }
 }

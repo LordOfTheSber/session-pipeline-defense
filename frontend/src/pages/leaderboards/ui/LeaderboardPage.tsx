@@ -62,6 +62,8 @@ export function LeaderboardPage() {
     };
   }, [autoRefresh]);
 
+  const dailyChallenge = useAsyncResource(() => gameApi.getDailyChallenge());
+
   const loadGlobalLeaderboard = useCallback(
     () => {
       void refreshTick;
@@ -82,8 +84,8 @@ export function LeaderboardPage() {
 
   return (
     <section>
-      <h2>Leaderboards</h2>
-      <p>Global and daily leaderboard data is loaded from persistence-backed backend APIs.</p>
+      <h2>Rankings Console</h2>
+      <p>Global throughput + daily reconstruction standings from persistence-backed backend APIs.</p>
 
       <div className="panel leaderboard-controls">
         <label htmlFor="lb-difficulty">Difficulty</label>
@@ -112,6 +114,13 @@ export function LeaderboardPage() {
         <LeaderboardTable title="Global Throughput" entries={globalLeaderboard.data ?? []} />
       )}
 
+      {dailyChallenge.data && (
+        <div className="panel panel-daily-log">
+          <h3>{dailyChallenge.data.logTitle}</h3>
+          <p>{dailyChallenge.data.logExcerpt}</p>
+        </div>
+      )}
+
       {dailyLeaderboard.isLoading ? (
         <LoadingState label={`daily leaderboard (${today})`} />
       ) : dailyLeaderboard.error ? (
@@ -120,7 +129,7 @@ export function LeaderboardPage() {
           message={`The daily leaderboard API endpoint for ${today} is not available yet. Check backend connectivity and run ingestion status.`}
         />
       ) : (
-        <LeaderboardTable title={`Daily Challenge — ${today}`} entries={dailyLeaderboard.data ?? []} />
+        <LeaderboardTable title={`RECONSTRUCTION RANKINGS — ${today}`} entries={dailyLeaderboard.data ?? []} />
       )}
     </section>
   );

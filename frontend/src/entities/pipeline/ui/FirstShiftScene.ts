@@ -106,6 +106,9 @@ export class FirstShiftScene extends Phaser.Scene {
 
           if (this.packetType === 'PACKET') {
             this.emitAria('session.placed', 'Packet processed. Credits recycle back into compute budget.');
+            if (this.sessionTtl <= 0) {
+              this.spawnCorruptedPacket();
+            }
           } else {
             this.emitAria('session.placed', 'Corrupted Data neutralized. You are cleared for live shifts.');
             this.finishShift();

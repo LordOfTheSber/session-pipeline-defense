@@ -2,19 +2,35 @@ import { useCallback, useMemo } from 'react';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
 import { gameApi } from '@/shared/api/gameApi';
 import { getStoredNickname } from '@/shared/lib/profilePrefs';
-import { loreCodex, initialRecoveredLogs } from '@/narrative/codex';
+import { loreCodex } from '@/narrative/codex';
+import { buildDailyLogFromChallenge, fallbackRecoveredLogs } from '@/narrative/dailyLogs';
 
-const LOCKED_SLOTS = 6;
+const LOCKED_SLOTS = 8;
 
 export function CodexPage() {
   const nickname = getStoredNickname();
   const loadNarrativeState = useCallback(() => gameApi.getNarrativeState(nickname), [nickname]);
   const narrativeState = useAsyncResource(loadNarrativeState);
+  const dailyChallenge = useAsyncResource(() => gameApi.getDailyChallenge());
 
   const unlockedLogs = useMemo(() => {
-    const introSeen = narrativeState.data?.seenBeatKeys.includes('act1.init_shift');
-    return introSeen ? initialRecoveredLogs : [];
-  }, [narrativeState.data?.seenBeatKeys]);
+    const seenBeatKeys = new Set(narrativeState.data?.seenBeatKeys ?? []);
+    const introSeen = seenBeatKeys.has('act1.init_shift');
+    const logs = introSeen ? [...fallbackRecoveredLogs] : [];
+
+    if (dailyChallenge.data && seenBeatKeys.has(dailyChallenge.data.narrativeBeatKey)) {
+      logs.push(
+        buildDailyLogFromChallenge(
+          dailyChallenge.data.challengeDate,
+          dailyChallenge.data.logTitle,
+          dailyChallenge.data.logExcerpt,
+          dailyChallenge.data.actReference,
+        ),
+      );
+    }
+
+    return logs;
+  }, [dailyChallenge.data, narrativeState.data?.seenBeatKeys]);
 
   return (
     <section>
@@ -60,7 +76,7 @@ export function CodexPage() {
             ))}
           </ul>
         ) : (
-          <p>[ENCRYPTED] Complete First Shift to unlock initial recovered logs.</p>
+          <p>[ENCRYPTED] Complete First Shift and finish Daily Reconstruction runs to unlock archive logs.</p>
         )}
 
         {Array.from({ length: Math.max(0, LOCKED_SLOTS - unlockedLogs.length) }).map((_, index) => (

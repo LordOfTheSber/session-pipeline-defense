@@ -104,6 +104,9 @@ class RunApiIntegrationTests {
                     value.setChallengeDate(LocalDate.of(2026, 4, 10));
                     value.setSeed(777L);
                     value.setConfigJson(Map.of());
+                    value.setLogTitle("Recovered Log #000 — \"Fixture\"");
+                    value.setLogExcerpt("Integration test fixture challenge row.");
+                    value.setActReference("ACT_II_CONTAINMENT");
                     value.setCreatedAt(Instant.now());
                     return dailyChallengeRepository.save(value);
                 });

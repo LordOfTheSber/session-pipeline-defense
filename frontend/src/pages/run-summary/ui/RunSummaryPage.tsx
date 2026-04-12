@@ -1,9 +1,19 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { gameApi } from '@/shared/api/gameApi';
 import { getStoredNickname } from '@/shared/lib/profilePrefs';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
 import { ErrorState, LoadingState } from '@/shared/ui/ResourceState';
+
+function ariaAssessment(score: number): string {
+  if (score >= 3000) {
+    return '// above expectations';
+  }
+  if (score >= 1300) {
+    return '// adequate';
+  }
+  return '// we need to talk';
+}
 
 export function RunSummaryPage() {
   const [searchParams] = useSearchParams();
@@ -14,10 +24,7 @@ export function RunSummaryPage() {
   const runHistory = useAsyncResource(loadRunHistory);
 
   const sortedRunHistory = useMemo(
-    () =>
-      [...(runHistory.data ?? [])].sort(
-        (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
-      ),
+    () => [...(runHistory.data ?? [])].sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
     [runHistory.data],
   );
 
@@ -32,9 +39,9 @@ export function RunSummaryPage() {
 
   return (
     <section>
-      <h2>Run Summary</h2>
+      <h2>SHIFT REPORT</h2>
       <p>
-        Select a game for <strong>{nickname}</strong>. Runs are sorted by date (newest first).
+        Select a shift for <strong>{nickname}</strong>. Records are sorted by date (newest first).
       </p>
 
       {runHistory.isLoading && <LoadingState label="run list" />}
@@ -47,7 +54,7 @@ export function RunSummaryPage() {
 
       {sortedRunHistory.length > 0 && (
         <div className="panel">
-          <label htmlFor="run-select">Choose game</label>{' '}
+          <label htmlFor="run-select">Choose shift</label>{' '}
           <select id="run-select" value={selectedRunId} onChange={(event) => setSelectedRunIdFromList(event.target.value)}>
             {sortedRunHistory.map((entry) => (
               <option key={entry.id} value={entry.id}>
@@ -60,7 +67,7 @@ export function RunSummaryPage() {
 
       {!runHistory.isLoading && !runHistory.error && sortedRunHistory.length === 0 && (
         <div className="panel">
-          <p>No games found for this nickname yet. Complete at least one run first.</p>
+          <p>No shifts found for this nickname yet. Complete at least one run first.</p>
         </div>
       )}
 
@@ -73,18 +80,22 @@ export function RunSummaryPage() {
       )}
 
       {runSummary.data && (
-        <div className="panel">
+        <div className="panel panel-accent">
+          <p>Operator: {runSummary.data.nicknameSnapshot}</p>
           <p>Run ID: {runSummary.data.id}</p>
           <ul>
-            <li>Nickname: {runSummary.data.nicknameSnapshot}</li>
-            <li>Processed Data: {runSummary.data.processedCount}</li>
-            <li>Wave Reached: {runSummary.data.waveReached}</li>
-            <li>Survival Time: {runSummary.data.survivalSeconds}s</li>
-            <li>Difficulty: {runSummary.data.difficulty}</li>
+            <li>Shift duration: {runSummary.data.survivalSeconds}s</li>
+            <li>Processed packets: {runSummary.data.processedCount}</li>
+            <li>Peak surge cycle: {runSummary.data.waveReached}</li>
             <li>Mode: {runSummary.data.mode}</li>
+            <li>Difficulty: {runSummary.data.difficulty}</li>
             <li>Score: {runSummary.data.score}</li>
+            <li>ARIA assessment: {ariaAssessment(runSummary.data.score)}</li>
             <li>Validation: {runSummary.data.suspicious ? `Flagged (${runSummary.data.validationNotes ?? 'No notes'})` : 'Clean'}</li>
           </ul>
+          <p>
+            <Link to="/play">NEXT SHIFT</Link> · <Link to="/codex">ARCHIVE</Link> · <Link to="/leaderboards">LEADERBOARD</Link>
+          </p>
         </div>
       )}
 
@@ -93,10 +104,6 @@ export function RunSummaryPage() {
           <p>Pick a run from the list above to view details.</p>
         </div>
       )}
-
-      <div className="panel">
-        Tip: you can still open a specific run directly via <code>?runId=&lt;uuid&gt;</code>.
-      </div>
     </section>
   );
 }

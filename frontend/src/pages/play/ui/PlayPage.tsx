@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { gameApi } from '@/shared/api/gameApi';
 import { ApiError } from '@/shared/api/http';
 import { getStoredDifficulty, getStoredNickname } from '@/shared/lib/profilePrefs';
-import type { Difficulty, RunSubmissionResponse } from '@/shared/types/api';
+import type { DailyChallengeResponse, Difficulty, RunSubmissionResponse } from '@/shared/types/api';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
 import { ErrorState, LoadingState } from '@/shared/ui/ResourceState';
 import { act1AriaLines } from '@/narrative/acts/act1';
@@ -81,6 +81,7 @@ export function PlayPage() {
   const [typedLine, setTypedLine] = useState('');
   const [hud, setHud] = useState<PipelineHudPayload | null>(null);
   const [showBriefing, setShowBriefing] = useState(false);
+  const [dailyStarted, setDailyStarted] = useState(mode !== 'DAILY');
   const lastAriaAtRef = useRef(0);
 
   const loadDailyChallenge = useCallback(
@@ -111,6 +112,10 @@ export function PlayPage() {
   }, [dailyChallenge.data, mode, selectedDifficulty]);
 
   useEffect(() => {
+    setDailyStarted(mode !== 'DAILY');
+  }, [mode]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setTypedLine((current) => {
         if (current.length >= ariaLine.length) {
@@ -128,6 +133,17 @@ export function PlayPage() {
     setTypedLine('');
   }, [ariaLine]);
 
+  const markDailyLogSeen = useCallback(async (challenge: DailyChallengeResponse | null) => {
+    if (!challenge) {
+      return;
+    }
+
+    await gameApi.markNarrativeSeen({
+      nickname,
+      beatKey: challenge.narrativeBeatKey,
+    });
+  }, [nickname]);
+
   useEffect(() => {
     const onRunComplete = async (event: Event) => {
       const customEvent = event as CustomEvent<LocalRunSummary>;
@@ -136,6 +152,10 @@ export function PlayPage() {
         setShowBriefing(true);
         await gameApi.markNarrativeSeen({ nickname, beatKey: 'act1.init_shift' });
         return;
+      }
+
+      if (runSummary.mode === 'DAILY') {
+        await markDailyLogSeen(dailyChallenge.data);
       }
 
       setSummary(runSummary);
@@ -196,7 +216,7 @@ export function PlayPage() {
       window.removeEventListener(ARIA_LINE_EVENT, onScriptedLine);
       window.removeEventListener(HUD_UPDATE_EVENT, onHudUpdate);
     };
-  }, [nickname]);
+  }, [dailyChallenge.data, markDailyLogSeen, nickname]);
 
   const onSkipFirstShift = () => {
     const confirmed = window.confirm('// ARIA: понял, ты уже бывал здесь. Пропустить первую смену?');
@@ -206,7 +226,7 @@ export function PlayPage() {
   };
 
   return (
-    <section>
+    <section className={mode === 'DAILY' ? 'daily-mode-shell' : undefined}>
       <h2>Division Console</h2>
       <p>
         Active operator: <strong>{nickname}</strong>. Mode: <strong>{mode}</strong>. Difficulty:{' '}
@@ -247,22 +267,22 @@ export function PlayPage() {
         />
       )}
       {mode === 'DAILY' && dailyChallenge.data && (
-        <div className="panel">
-          <h3>RECOVERED DAILY CHALLENGE ({dailyChallenge.data.challengeDate})</h3>
+        <div className="panel panel-daily-log">
+          <h3>{dailyChallenge.data.logTitle}</h3>
+          <p className="muted">{dailyChallenge.data.actReference}</p>
+          <p>{dailyChallenge.data.logExcerpt}</p>
           <p>
-            Seed <code>{dailyChallenge.data.seed}</code> with modifiers:
+            Seed <code>{dailyChallenge.data.seed}</code> · leaderboard window <code>{dailyChallenge.data.leaderboardWindowKey}</code>
           </p>
-          <ul>
-            {Object.entries(dailyChallenge.data.challengeModifiers).map(([key, value]) => (
-              <li key={key}>
-                {key}: <strong>{value}</strong>
-              </li>
-            ))}
-          </ul>
+          {!dailyStarted && (
+            <button type="button" onClick={() => setDailyStarted(true)}>
+              BEGIN RECONSTRUCTION
+            </button>
+          )}
         </div>
       )}
 
-      {(mode === 'ENDLESS' || mode === 'FIRST_SHIFT' || dailyChallenge.data) && <PhaserGameCanvas runOptions={runOptions} />}
+      {(mode === 'ENDLESS' || mode === 'FIRST_SHIFT' || (dailyChallenge.data && dailyStarted)) && <PhaserGameCanvas runOptions={runOptions} />}
 
       {showBriefing && (
         <div className="panel panel-accent">
@@ -284,7 +304,7 @@ export function PlayPage() {
 
       {summary && (
         <div className="panel">
-          <h3>Latest Run Summary</h3>
+          <h3>Latest Shift Outcome</h3>
           <ul>
             <li>Mode: {summary.mode}</li>
             <li>Difficulty: {summary.difficulty}</li>

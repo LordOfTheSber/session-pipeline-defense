@@ -7,6 +7,10 @@ public record DailyChallengeResponse(
         LocalDate challengeDate,
         long seed,
         Map<String, Object> challengeModifiers,
-        String leaderboardWindowKey
+        String leaderboardWindowKey,
+        String logTitle,
+        String logExcerpt,
+        String actReference,
+        String narrativeBeatKey
 ) {
 }

@@ -4,9 +4,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.util.Map;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -27,6 +27,15 @@ public class DailyChallenge {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "config_json", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> configJson;
+
+    @Column(name = "log_title", nullable = false, length = 180)
+    private String logTitle;
+
+    @Column(name = "log_excerpt", nullable = false, columnDefinition = "text")
+    private String logExcerpt;
+
+    @Column(name = "act_reference", nullable = false, length = 64)
+    private String actReference;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -61,6 +70,30 @@ public class DailyChallenge {
 
     public void setConfigJson(Map<String, Object> configJson) {
         this.configJson = configJson;
+    }
+
+    public String getLogTitle() {
+        return logTitle;
+    }
+
+    public void setLogTitle(String logTitle) {
+        this.logTitle = logTitle;
+    }
+
+    public String getLogExcerpt() {
+        return logExcerpt;
+    }
+
+    public void setLogExcerpt(String logExcerpt) {
+        this.logExcerpt = logExcerpt;
+    }
+
+    public String getActReference() {
+        return actReference;
+    }
+
+    public void setActReference(String actReference) {
+        this.actReference = actReference;
     }
 
     public Instant getCreatedAt() {

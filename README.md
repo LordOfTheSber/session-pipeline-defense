@@ -14,6 +14,7 @@ PvZ-inspired full-stack lane defense mini-game for **VibeCoding Challenge #3 —
 - ✅ Phase 8 complete: difficulty scaling, profile persistence, run history, optional leaderboard auto-refresh
 - ✅ Phase 9 complete: UX clarity polish, stronger empty/error states, improved in-game/read-model communication
 - ✅ **Phase 10 complete**: repository cleanup, documentation expansion, setup reproducibility, and final QA checklist
+- ✅ **Phase 11 complete**: narrative foundation (Act I), ARIA voice canon, and DB-backed narrative progress APIs
 
 ## Core gameplay metaphor
 - **Sessions** = temporary processing workers you deploy.
@@ -115,6 +116,10 @@ Important variables:
 - `GET /api/players/{nickname}` — fetch profile by nickname.
 - `GET /api/players/{nickname}/runs?limit=` — recent run history.
 
+### Narrative
+- `GET /api/narrative/state?nickname=` — fetch viewed narrative beats for a nickname.
+- `POST /api/narrative/seen` — idempotently mark a narrative beat as seen.
+
 ## Gameplay modes and replayability
 - **Endless mode** with increasing pressure/waves.
 - **Daily challenge mode** seeded by backend for deterministic daily competition.
@@ -126,6 +131,13 @@ Important variables:
 - Frontend remains gameplay-authoritative for real-time feel.
 - Backend validates run summary plausibility (range/enums/challenge consistency).
 - Persisted run records power leaderboard and profile-history queries.
+- Narrative beat progression is persisted server-side per nickname to avoid repeating onboarding beats.
+
+## Narrative foundation (Phase 11)
+- Typed narrative models and Act I story beats live in `frontend/src/narrative`.
+- ARIA Act I script includes 30 trigger-based lines for onboarding, first corruption, and first failure flows.
+- Lore glossary is centralized in `frontend/src/narrative/codex.ts` for wording consistency across UI.
+- ARIA voice style canon is documented in [`docs/voice.md`](./docs/voice.md).
 
 ## Test and check commands
 

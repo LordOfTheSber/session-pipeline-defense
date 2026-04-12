@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { useEffect, useRef } from 'react';
 import { PipelineScene, type PipelineRunOptions } from '../../../entities/pipeline/ui/PipelineScene';
+import { FirstShiftScene } from '../../../entities/pipeline/ui/FirstShiftScene';
 
 type PhaserGameCanvasProps = {
   runOptions: PipelineRunOptions;
@@ -20,7 +21,7 @@ export function PhaserGameCanvas({ runOptions }: PhaserGameCanvasProps) {
       height: 520,
       parent: containerRef.current,
       backgroundColor: '#0b1320',
-      scene: [new PipelineScene(runOptions)],
+      scene: [runOptions.mode === 'FIRST_SHIFT' ? new FirstShiftScene() : new PipelineScene(runOptions)],
     });
 
     return () => {

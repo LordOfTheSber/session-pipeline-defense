@@ -6,6 +6,7 @@ const navItems = [
   { to: '/leaderboards', label: 'Leaderboards' },
   { to: '/run-summary', label: 'Run Summary' },
   { to: '/run-history', label: 'Run History' },
+  { to: '/codex', label: 'Codex' },
   { to: '/settings', label: 'Settings' },
 ];
 

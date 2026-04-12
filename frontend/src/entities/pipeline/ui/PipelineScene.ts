@@ -69,17 +69,47 @@ type RunSummaryPayload = {
   systemHealthEnd: number;
   activeSessionPeak: number;
   score: number;
-  mode: 'ENDLESS' | 'DAILY';
+  mode: 'ENDLESS' | 'DAILY' | 'FIRST_SHIFT';
   difficulty: Difficulty;
   challengeDate?: string;
   challengeSeed?: number;
 };
 
 export type PipelineRunOptions = {
-  mode: 'ENDLESS' | 'DAILY';
+  mode: 'ENDLESS' | 'DAILY' | 'FIRST_SHIFT';
   difficulty: Difficulty;
   challengeDate?: string;
   challengeSeed?: number;
+};
+
+export type PipelineEventType =
+  | 'run.start'
+  | 'session.placed'
+  | 'session.expired'
+  | 'data.corrupted'
+  | 'data.leaked'
+  | 'wave.start'
+  | 'health.critical'
+  | 'run.loss';
+
+export type PipelineEventPayload = {
+  type: PipelineEventType;
+  lane?: number;
+  wave?: number;
+  integrity?: number;
+};
+
+export type PipelineHudPayload = {
+  mode: PipelineRunOptions['mode'];
+  difficulty: Difficulty;
+  credits: number;
+  processed: number;
+  wave: number;
+  timeSeconds: number;
+  systemHealth: number;
+  maxSystemHealth: number;
+  integrityPercent: number;
+  selectedSessionLabel: string;
 };
 
 const LANE_COUNT = 5;
@@ -195,7 +225,9 @@ const DIFFICULTY_TUNING: Record<Difficulty, DifficultyTuning> = {
   },
 };
 
-const RUN_COMPLETE_EVENT = 'session-defense:run-complete';
+export const RUN_COMPLETE_EVENT = 'session-defense:run-complete';
+export const PIPELINE_EVENT = 'session-defense:game-event';
+export const HUD_UPDATE_EVENT = 'session-defense:hud-update';
 const FEEDBACK_FLASH_TTL_MS = 320;
 
 export class PipelineScene extends Phaser.Scene {
@@ -239,6 +271,10 @@ export class PipelineScene extends Phaser.Scene {
 
   private randomizer?: Phaser.Math.RandomDataGenerator;
 
+  private sentCriticalHealthEvent = false;
+
+  private sentCorruptedSeenEvent = false;
+
   constructor(runOptions?: PipelineRunOptions) {
     super('PipelineScene');
     this.runOptions = runOptions ?? { mode: 'ENDLESS', difficulty: 'STANDARD' };
@@ -279,6 +315,8 @@ export class PipelineScene extends Phaser.Scene {
     this.renderHud();
     this.setMessage('Use keys 1-3 to pick a Session, then click a lane cell to deploy.');
     this.renderSelectionHint();
+    this.emitPipelineEvent({ type: 'run.start', wave: 1, integrity: this.systemHealth });
+    this.emitPipelineEvent({ type: 'wave.start', wave: 1, integrity: this.systemHealth });
   }
 
   update(_: number, deltaMs: number) {
@@ -379,6 +417,7 @@ export class PipelineScene extends Phaser.Scene {
       this.creditsSpent += spec.cost;
       this.deploySession(lane, column, this.selectedSessionType);
       this.setMessage(`${spec.label} deployed in Lane ${lane + 1}.`);
+      this.emitPipelineEvent({ type: 'session.placed', lane, wave: this.wave, integrity: this.systemHealth });
       this.flashLane(lane, 0x22d3ee);
       this.renderHud();
     });
@@ -464,6 +503,7 @@ export class PipelineScene extends Phaser.Scene {
           this.setMessage(`${spec.label} in Lane ${session.lane + 1} retired (capacity spent).`);
         }
         this.destroySession(key, session);
+        this.emitPipelineEvent({ type: 'session.expired', lane: session.lane, wave: this.wave, integrity: this.systemHealth });
       }
     }
 
@@ -504,7 +544,13 @@ export class PipelineScene extends Phaser.Scene {
         packet.sprite.destroy();
         this.systemHealth -= 1;
         this.setMessage(`Overload in Lane ${packet.lane + 1}. System health reduced.`);
+        this.emitPipelineEvent({ type: 'data.leaked', lane: packet.lane, wave: this.wave, integrity: this.systemHealth });
         this.flashLane(packet.lane, 0xdc2626);
+
+        if (this.systemHealth <= Math.max(1, Math.floor(this.difficultyTuning.startingSystemHealth / 2)) && !this.sentCriticalHealthEvent) {
+          this.sentCriticalHealthEvent = true;
+          this.emitPipelineEvent({ type: 'health.critical', wave: this.wave, integrity: this.systemHealth });
+        }
 
         if (this.systemHealth <= 0) {
           this.triggerSystemFailure();
@@ -523,10 +569,11 @@ export class PipelineScene extends Phaser.Scene {
   private triggerSystemFailure() {
     this.isRunOver = true;
     this.setMessage('System failure. Click the board to restart run.');
+    this.emitPipelineEvent({ type: 'run.loss', wave: this.wave, integrity: this.systemHealth });
 
     this.add.rectangle(450, 260, 760, 200, 0x020617, 0.88).setStrokeStyle(2, 0xef4444).setDepth(40);
     this.add
-      .text(450, 220, 'SYSTEM OVERLOAD', {
+      .text(450, 220, 'SYSTEM BREACH', {
         fontFamily: 'monospace',
         fontSize: '40px',
         color: '#f87171',
@@ -593,6 +640,7 @@ export class PipelineScene extends Phaser.Scene {
       this.wave = nextWave;
       this.spawnIntervalSeconds = Math.max(0.45, (2.1 - this.wave * 0.17) / this.difficultyTuning.spawnPressureMultiplier);
       this.setMessage(`Wave ${this.wave}: ingress traffic increased.`);
+      this.emitPipelineEvent({ type: 'wave.start', wave: this.wave, integrity: this.systemHealth });
     }
   }
 
@@ -619,6 +667,11 @@ export class PipelineScene extends Phaser.Scene {
       rewardCredits: spec.rewardCredits,
       sprite,
     });
+
+    if (type === 'CORRUPTED_DATA' && !this.sentCorruptedSeenEvent) {
+      this.sentCorruptedSeenEvent = true;
+      this.emitPipelineEvent({ type: 'data.corrupted', lane, wave: this.wave, integrity: this.systemHealth });
+    }
   }
 
   private pickDataArchetype(): DataArchetype {
@@ -685,6 +738,24 @@ export class PipelineScene extends Phaser.Scene {
     this.hudText.setText(
       `Mode: ${this.runOptions.mode} | Difficulty: ${this.runOptions.difficulty} | Credits: ${Math.floor(this.credits)} | Health: ${this.systemHealth} | Processed: ${this.processedCount} | Wave: ${this.wave} | Time: ${Math.floor(this.elapsedSeconds)}s | Selected: ${spec.label} (${spec.cost})`,
     );
+    const maxHealth = this.difficultyTuning.startingSystemHealth;
+    const integrityPercent = Math.round((Math.max(0, this.systemHealth) / maxHealth) * 100);
+    window.dispatchEvent(
+      new CustomEvent<PipelineHudPayload>(HUD_UPDATE_EVENT, {
+        detail: {
+          mode: this.runOptions.mode,
+          difficulty: this.runOptions.difficulty,
+          credits: Math.floor(this.credits),
+          processed: this.processedCount,
+          wave: this.wave,
+          timeSeconds: Math.floor(this.elapsedSeconds),
+          systemHealth: this.systemHealth,
+          maxSystemHealth: maxHealth,
+          integrityPercent,
+          selectedSessionLabel: spec.label,
+        },
+      }),
+    );
   }
 
   private setMessage(message: string) {
@@ -722,5 +793,13 @@ export class PipelineScene extends Phaser.Scene {
     this.time.delayedCall(FEEDBACK_FLASH_TTL_MS, () => {
       overlay.destroy();
     });
+  }
+
+  private emitPipelineEvent(payload: PipelineEventPayload) {
+    window.dispatchEvent(
+      new CustomEvent<PipelineEventPayload>(PIPELINE_EVENT, {
+        detail: payload,
+      }),
+    );
   }
 }

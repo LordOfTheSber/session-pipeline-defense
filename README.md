@@ -11,7 +11,17 @@ PvZ-inspired full-stack lane defense mini-game for **VibeCoding Challenge #3 —
 - ✅ Phase 5 complete: TTL/capacity lifecycle, archetypes, overload loss, run summary events
 - ✅ Phase 6 complete: run ingestion + persistence-backed global/daily leaderboard APIs
 - ✅ Phase 7 complete: deterministic server-seeded daily challenge endpoint wired into frontend daily mode
-- ✅ Phase 8 complete: difficulty scaling, profile persistence, run history, and optional leaderboard auto-refresh
+- ✅ Phase 8 complete: difficulty scaling, profile persistence, run history, optional leaderboard auto-refresh
+- ✅ Phase 9 complete: UX clarity polish, stronger empty/error states, improved in-game/read-model communication
+- ✅ **Phase 10 complete**: repository cleanup, documentation expansion, setup reproducibility, and final QA checklist
+
+## Core gameplay metaphor
+- **Sessions** = temporary processing workers you deploy.
+- **Data** = incoming hostile workload.
+- **Credits** = finite compute budget for deployments.
+- **Lanes** = pipeline channels under pressure.
+- **Loss** = overload/SLA breach when data crosses boundary.
+- **Score** = throughput + survivability performance.
 
 ## Tech stack
 - **Backend:** Java 21, Spring Boot 3, Spring Web/Validation/JPA, Flyway, PostgreSQL driver
@@ -22,10 +32,10 @@ PvZ-inspired full-stack lane defense mini-game for **VibeCoding Challenge #3 —
 ```text
 .
 ├── AGENTS.md
-├── backend/
-├── frontend/
-├── docker-compose.yml
-└── .env.example
+├── backend/               # Spring Boot API + Flyway migrations
+├── frontend/              # React/Phaser client
+├── docker-compose.yml     # local PostgreSQL service
+└── .env.example           # local environment defaults
 ```
 
 ## Prerequisites
@@ -48,8 +58,7 @@ cd backend
 ./mvnw spring-boot:run
 ```
 
-Backend health endpoint:
-- `GET http://localhost:8080/api/health`
+Backend base URL: `http://localhost:8080`
 
 ### 3) Run frontend
 ```bash
@@ -58,37 +67,99 @@ npm install
 npm run dev
 ```
 
-Frontend default URL:
-- `http://localhost:5173`
-- Vite dev server proxies `/api/*` to `http://localhost:8080` to avoid browser CORS issues during local development.
+Frontend URL: `http://localhost:5173`
 
-## What Phase 1–3 includes
-- Spring Boot API scaffold with env-based datasource config.
-- Custom API health endpoint (`/api/health`).
-- React Router app shell with pages:
-  - Main Menu
-  - Play
-  - Leaderboards
-  - Run Summary
-  - Settings
-- Phaser canvas mounted in Play page with a visual placeholder scene.
+> The Vite dev server proxies `/api/*` to `http://localhost:8080`.
 
-## What is intentionally deferred
-- UX polish and onboarding/tooltips/balance tuning (Phase 9)
-- Final cleanup and extended QA checklist execution (Phase 10)
+## Configuration
+Default local values are documented in [`.env.example`](./.env.example).
 
+Important variables:
+- `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`
+- `SERVER_PORT`
 
-## Frontend architecture (FSD)
-- `src/app` — app composition, providers, router, layouts.
-- `src/pages` — route-level pages grouped by slice.
-- `src/widgets` — composed UI blocks (e.g., Phaser host widget).
-- `src/entities` — domain UI primitives (e.g., pipeline scene entity).
-- `src/features` — user features (reserved for next phases).
-- `src/shared` — shared styles/utils/types/api primitives.
+## Architecture summary
 
-## Phase 8 highlights
-- Difficulty-aware endless gameplay tuning (STANDARD/HARDENED/NIGHTMARE) in Phaser loop.
-- Profile persistence endpoint (`POST /api/players/profile`) and retrieval endpoint (`GET /api/players/{nickname}`).
-- Run history endpoint (`GET /api/players/{nickname}/runs`) and dedicated frontend page.
-- Settings page now persists nickname + preferred difficulty (local + backend).
-- Leaderboards support optional 20s auto-refresh and manual refresh.
+### Backend layers
+- `controller/` — REST APIs and request validation boundaries.
+- `service/` — run ingestion, scoring sanity checks, leaderboard and challenge orchestration.
+- `repository/` — Spring Data JPA repositories.
+- `domain/entity/` — persistence entities for runs, profiles, challenges.
+- `dto/` — explicit API contract objects.
+
+### Frontend layers
+- `src/pages` — route-level UX (menu, play, leaderboards, run summary, settings, run history).
+- `src/widgets/phaser-game` — Phaser mount widget for React integration.
+- `src/entities/pipeline` — gameplay scene implementation.
+- `src/shared/api` + `src/shared/types` — typed API client and contracts.
+
+## API overview
+
+### Health
+- `GET /api/health`
+
+### Challenges
+- `GET /api/challenges/daily`
+
+### Runs
+- `POST /api/runs` — submit a completed run summary.
+- `GET /api/runs/{id}` — fetch run detail for summary view.
+
+### Leaderboards
+- `GET /api/leaderboards/global?difficulty=&limit=`
+- `GET /api/leaderboards/daily?date=&difficulty=&limit=`
+
+### Players
+- `POST /api/players/profile` — create/update nickname + preferred difficulty.
+- `GET /api/players/{nickname}` — fetch profile by nickname.
+- `GET /api/players/{nickname}/runs?limit=` — recent run history.
+
+## Gameplay modes and replayability
+- **Endless mode** with increasing pressure/waves.
+- **Daily challenge mode** seeded by backend for deterministic daily competition.
+- **Difficulty presets** that affect challenge pressure and score outcomes.
+- **Persistent leaderboards** (global + daily) backed by PostgreSQL.
+- **Run history** tied to nickname/profile for repeat play analysis.
+
+## Validation and persistence model
+- Frontend remains gameplay-authoritative for real-time feel.
+- Backend validates run summary plausibility (range/enums/challenge consistency).
+- Persisted run records power leaderboard and profile-history queries.
+
+## Test and check commands
+
+Backend:
+```bash
+cd backend
+./mvnw test
+```
+
+Frontend:
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
+## Manual playtest checklist (Phase 10)
+- [x] Open app and start run from main menu.
+- [x] Deploy sessions into lanes; confirm credits are consumed.
+- [x] Observe data advancing and being processed in-lane.
+- [x] Confirm sessions expire by TTL/capacity and require redeployment.
+- [x] Trigger loss/overload state and inspect run summary.
+- [x] Submit run and confirm persistence-backed leaderboard visibility.
+- [x] Switch to daily mode and verify challenge seed-based deterministic mode tagging.
+- [x] Save nickname/preferred difficulty and verify run history retrieval.
+
+## Final verification checklist
+- [x] Backend runs locally and serves required APIs.
+- [x] Frontend runs locally and launches gameplay.
+- [x] PostgreSQL starts via Docker Compose and Flyway migration applies.
+- [x] Session TTL/capacity lifecycle is visible in gameplay.
+- [x] Loss state and run summary flow are clear.
+- [x] Run submission is validated/persisted.
+- [x] Global leaderboard displays persisted runs.
+- [x] Daily challenge seed comes from backend and tags daily runs.
+- [x] Difficulty scaling impacts gameplay/score dynamics.
+- [x] README includes setup, architecture, API overview, and playtest guidance.

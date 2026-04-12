@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { gameApi } from '@/shared/api/gameApi';
 import { ApiError } from '@/shared/api/http';
@@ -40,10 +40,11 @@ export function PlayPage() {
   const [summary, setSummary] = useState<LocalRunSummary | null>(null);
   const [submittedRun, setSubmittedRun] = useState<RunSubmissionResponse | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const dailyChallenge = useAsyncResource(
+  const loadDailyChallenge = useCallback(
     () => (mode === 'DAILY' ? gameApi.getDailyChallenge() : Promise.resolve(null)),
     [mode],
   );
+  const dailyChallenge = useAsyncResource(loadDailyChallenge);
 
   const runOptions = useMemo<PipelineRunOptions>(() => {
     if (mode === 'DAILY' && dailyChallenge.data) {

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { gameApi } from '@/shared/api/gameApi';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
@@ -9,7 +9,8 @@ export function RunSummaryPage() {
   const [searchParams] = useSearchParams();
   const runId = useMemo(() => searchParams.get('runId') ?? SAMPLE_RUN_ID, [searchParams]);
 
-  const runSummary = useAsyncResource(() => gameApi.getRunSummary(runId), [runId]);
+  const loadRunSummary = useCallback(() => gameApi.getRunSummary(runId), [runId]);
+  const runSummary = useAsyncResource(loadRunSummary);
 
   return (
     <section>

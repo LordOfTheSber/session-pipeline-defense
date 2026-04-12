@@ -16,4 +16,6 @@ public interface GameRunRepository extends JpaRepository<GameRun, UUID> {
             Difficulty difficulty,
             Pageable pageable
     );
+
+    List<GameRun> findByNicknameSnapshotOrderByCreatedAtDesc(String nicknameSnapshot, Pageable pageable);
 }

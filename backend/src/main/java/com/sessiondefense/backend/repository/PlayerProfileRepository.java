@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PlayerProfileRepository extends JpaRepository<PlayerProfile, UUID> {
     Optional<PlayerProfile> findByNickname(String nickname);
+
+    Optional<PlayerProfile> findByNicknameIgnoreCase(String nickname);
 }

@@ -143,12 +143,14 @@ public class RunService {
                 .orElse(null);
 
         if (challenge == null) {
-            validationNotes.add("No daily challenge exists for date " + request.challengeDate());
+            validationNotes.add("No daily challenge exists for date " + request.challengeDate()
+                    + ". Fetch /api/challenges/daily before submitting DAILY runs.");
             return;
         }
 
         if (challenge.getSeed() != request.challengeSeed()) {
-            validationNotes.add("Submitted challengeSeed does not match server seed for challenge date");
+            validationNotes.add("Submitted challengeSeed " + request.challengeSeed()
+                    + " does not match server seed " + challenge.getSeed() + " for " + request.challengeDate());
         }
     }
 
@@ -166,7 +168,8 @@ public class RunService {
         int projectedScore = (int) Math.round(expectedBase * multiplier);
         int tolerance = 400;
         if (Math.abs(request.score() - projectedScore) > tolerance) {
-            validationNotes.add("Score is outside plausibility tolerance (expected about " + projectedScore + ")");
+            validationNotes.add("Score is outside plausibility tolerance: submitted=" + request.score()
+                    + ", expected≈" + projectedScore + ", tolerance=±" + tolerance);
         }
     }
 

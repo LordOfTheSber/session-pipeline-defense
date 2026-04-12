@@ -3,7 +3,7 @@ interface LoadingStateProps {
 }
 
 export function LoadingState({ label }: LoadingStateProps) {
-  return <div className="panel state-loading">Loading {label}…</div>;
+  return <div className="panel state-loading">Loading {label}… If this takes more than a few seconds, check backend logs.</div>;
 }
 
 interface ErrorStateProps {
@@ -16,6 +16,7 @@ export function ErrorState({ title, message }: ErrorStateProps) {
     <div className="panel state-error" role="alert">
       <h3>{title}</h3>
       <p>{message}</p>
+      <p className="muted">Retry after confirming API service and PostgreSQL container are reachable.</p>
     </div>
   );
 }

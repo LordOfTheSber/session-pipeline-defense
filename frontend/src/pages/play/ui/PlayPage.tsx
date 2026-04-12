@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { gameApi } from '@/shared/api/gameApi';
+import { ApiError } from '@/shared/api/http';
 import { getStoredDifficulty, getStoredNickname } from '@/shared/lib/profilePrefs';
 import type { Difficulty, RunSubmissionResponse } from '@/shared/types/api';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
@@ -71,7 +72,12 @@ export function PlayPage() {
           ...runSummary,
         });
         setSubmittedRun(response);
-      } catch {
+      } catch (error) {
+        if (error instanceof ApiError) {
+          const detailText = error.details?.length ? ` (${error.details.join(' | ')})` : '';
+          setSubmitError(`Run submission failed: ${error.message}${detailText}`);
+          return;
+        }
         setSubmitError('Run submission failed. Backend may be unavailable.');
       }
     };
@@ -89,6 +95,14 @@ export function PlayPage() {
         Endless mode now scales by selected difficulty. Active profile: <strong>{nickname}</strong>. Difficulty:{' '}
         <strong>{selectedDifficulty}</strong>.
       </p>
+      <div className="panel panel-accent">
+        <h3>Quick onboarding</h3>
+        <ul>
+          <li>Deploy Sessions with keys 1–3 + lane click. Keep some Credits in reserve for burst lanes.</li>
+          <li>Sessions retire by TTL or capacity, so rotate placements before lanes collapse.</li>
+          <li>Validator Sessions are best against Corrupted Data and stabilize late-wave spikes.</li>
+        </ul>
+      </div>
       {mode === 'DAILY' && dailyChallenge.isLoading && <LoadingState label="daily challenge seed" />}
       {mode === 'DAILY' && dailyChallenge.error && (
         <ErrorState

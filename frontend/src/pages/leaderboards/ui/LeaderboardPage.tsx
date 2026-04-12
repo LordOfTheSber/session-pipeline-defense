@@ -10,7 +10,10 @@ function LeaderboardTable({ title, entries }: { title: string; entries: Leaderbo
     <div className="panel">
       <h3>{title}</h3>
       {entries.length === 0 ? (
-        <p>No runs submitted yet.</p>
+        <div className="empty-state">
+          <p>No runs submitted yet for this difficulty.</p>
+          <p>Tip: complete a run in Play mode, then refresh this page.</p>
+        </div>
       ) : (
         <table className="leaderboard-table">
           <thead>
@@ -86,6 +89,7 @@ export function LeaderboardPage() {
         <button type="button" onClick={() => setRefreshTick((value) => value + 1)}>
           Refresh now
         </button>
+        <span className="muted">Last query date: {today}</span>
       </div>
 
       {globalLeaderboard.isLoading ? (

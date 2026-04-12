@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { gameApi } from '@/shared/api/gameApi';
+import { getStoredDifficulty, getStoredNickname } from '@/shared/lib/profilePrefs';
+import type { Difficulty, RunSubmissionResponse } from '@/shared/types/api';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
 import { ErrorState, LoadingState } from '@/shared/ui/ResourceState';
-import type { RunSubmissionResponse } from '@/shared/types/api';
 import type { PipelineRunOptions } from '@/entities/pipeline/ui/PipelineScene';
 import { PhaserGameCanvas } from '../../../widgets/phaser-game/ui/PhaserGameCanvas';
 
@@ -16,7 +17,7 @@ type LocalRunSummary = {
   activeSessionPeak: number;
   score: number;
   mode: 'ENDLESS' | 'DAILY';
-  difficulty: 'STANDARD';
+  difficulty: Difficulty;
   challengeDate?: string;
   challengeSeed?: number;
 };
@@ -26,6 +27,15 @@ const RUN_COMPLETE_EVENT = 'session-defense:run-complete';
 export function PlayPage() {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') === 'DAILY' ? 'DAILY' : 'ENDLESS';
+  const queryDifficulty = searchParams.get('difficulty');
+  const storedDifficulty = getStoredDifficulty();
+  const selectedDifficulty: Difficulty =
+    queryDifficulty === 'HARDENED' || queryDifficulty === 'NIGHTMARE' || queryDifficulty === 'STANDARD'
+      ? queryDifficulty
+      : storedDifficulty;
+
+  const nickname = getStoredNickname();
+
   const [summary, setSummary] = useState<LocalRunSummary | null>(null);
   const [submittedRun, setSubmittedRun] = useState<RunSubmissionResponse | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -38,14 +48,14 @@ export function PlayPage() {
     if (mode === 'DAILY' && dailyChallenge.data) {
       return {
         mode: 'DAILY',
-        difficulty: 'STANDARD',
+        difficulty: selectedDifficulty,
         challengeDate: dailyChallenge.data.challengeDate,
         challengeSeed: dailyChallenge.data.seed,
       };
     }
 
-    return { mode: 'ENDLESS', difficulty: 'STANDARD' };
-  }, [dailyChallenge.data, mode]);
+    return { mode: 'ENDLESS', difficulty: selectedDifficulty };
+  }, [dailyChallenge.data, mode, selectedDifficulty]);
 
   useEffect(() => {
     const onRunComplete = async (event: Event) => {
@@ -57,7 +67,7 @@ export function PlayPage() {
 
       try {
         const response = await gameApi.submitRun({
-          nickname: 'operator',
+          nickname,
           ...runSummary,
         });
         setSubmittedRun(response);
@@ -70,14 +80,14 @@ export function PlayPage() {
     return () => {
       window.removeEventListener(RUN_COMPLETE_EVENT, onRunComplete);
     };
-  }, []);
+  }, [nickname]);
 
   return (
     <section>
       <h2>Play</h2>
       <p>
-        Phase 5 gameplay is live: deploy archetyped Sessions with TTL/capacity limits, survive escalating Data
-        waves, and review your run summary on system overload.
+        Endless mode now scales by selected difficulty. Active profile: <strong>{nickname}</strong>. Difficulty:{' '}
+        <strong>{selectedDifficulty}</strong>.
       </p>
       {mode === 'DAILY' && dailyChallenge.isLoading && <LoadingState label="daily challenge seed" />}
       {mode === 'DAILY' && dailyChallenge.error && (
@@ -121,7 +131,7 @@ export function PlayPage() {
           {submittedRun && (
             <p>
               Persisted run <code>{submittedRun.id}</code>
-              {submittedRun.suspicious ? ` (flagged: ${submittedRun.validationNotes ?? 'no notes'})` : ' (validation clean)'}. 
+              {submittedRun.suspicious ? ` (flagged: ${submittedRun.validationNotes ?? 'no notes'})` : ' (validation clean)'}.
               Visit Run Summary with <code>?runId={submittedRun.id}</code>.
             </p>
           )}

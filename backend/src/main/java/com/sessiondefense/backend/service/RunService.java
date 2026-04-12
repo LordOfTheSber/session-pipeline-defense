@@ -4,8 +4,10 @@ import com.sessiondefense.backend.domain.entity.DailyChallenge;
 import com.sessiondefense.backend.domain.entity.Difficulty;
 import com.sessiondefense.backend.domain.entity.GameMode;
 import com.sessiondefense.backend.domain.entity.GameRun;
+import com.sessiondefense.backend.domain.entity.PlayerProfile;
 import com.sessiondefense.backend.dto.LeaderboardEntryResponse;
 import com.sessiondefense.backend.dto.RunDetailResponse;
+import com.sessiondefense.backend.dto.RunHistoryEntryResponse;
 import com.sessiondefense.backend.dto.RunSubmissionRequest;
 import com.sessiondefense.backend.dto.RunSubmissionResponse;
 import com.sessiondefense.backend.repository.DailyChallengeRepository;
@@ -24,10 +26,16 @@ public class RunService {
 
     private final GameRunRepository gameRunRepository;
     private final DailyChallengeRepository dailyChallengeRepository;
+    private final PlayerProfileService playerProfileService;
 
-    public RunService(GameRunRepository gameRunRepository, DailyChallengeRepository dailyChallengeRepository) {
+    public RunService(
+            GameRunRepository gameRunRepository,
+            DailyChallengeRepository dailyChallengeRepository,
+            PlayerProfileService playerProfileService
+    ) {
         this.gameRunRepository = gameRunRepository;
         this.dailyChallengeRepository = dailyChallengeRepository;
+        this.playerProfileService = playerProfileService;
     }
 
     public RunSubmissionResponse submitRun(RunSubmissionRequest request) {
@@ -39,8 +47,11 @@ public class RunService {
 
         validateScorePlausibility(request, validationNotes);
 
+        PlayerProfile playerProfile = playerProfileService.getOrCreateByNickname(request.nickname(), request.difficulty());
+
         GameRun run = new GameRun();
         run.setId(UUID.randomUUID());
+        run.setPlayerProfile(playerProfile);
         run.setNicknameSnapshot(request.nickname().trim());
         run.setMode(request.mode());
         run.setDifficulty(request.difficulty());
@@ -85,6 +96,24 @@ public class RunService {
                 run.getValidationNotes(),
                 run.getCreatedAt()
         );
+    }
+
+    public List<RunHistoryEntryResponse> getRunHistory(String nickname, int limit) {
+        return gameRunRepository
+                .findByNicknameSnapshotOrderByCreatedAtDesc(nickname.trim(), PageRequest.of(0, limit))
+                .stream()
+                .map(run -> new RunHistoryEntryResponse(
+                        run.getId(),
+                        run.getScore(),
+                        run.getProcessedCount(),
+                        run.getWaveReached(),
+                        run.getSurvivalSeconds(),
+                        run.getDifficulty(),
+                        run.getMode(),
+                        run.isSuspicious(),
+                        run.getCreatedAt()
+                ))
+                .toList();
     }
 
     public List<LeaderboardEntryResponse> getGlobalLeaderboard(Difficulty difficulty, int limit) {

@@ -165,4 +165,41 @@ class RunApiIntegrationTests {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.suspicious").value(false));
     }
+
+    @Test
+    void shouldUpsertPlayerProfileAndLoadRunHistory() throws Exception {
+        Map<String, Object> profilePayload = Map.of(
+                "nickname", "phase8-user",
+                "preferredDifficulty", "NIGHTMARE"
+        );
+
+        mockMvc.perform(post("/api/players/profile")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(profilePayload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nickname").value("phase8-user"))
+                .andExpect(jsonPath("$.preferredDifficulty").value("NIGHTMARE"));
+
+        Map<String, Object> runPayload = new HashMap<>();
+        runPayload.put("nickname", "phase8-user");
+        runPayload.put("mode", "ENDLESS");
+        runPayload.put("difficulty", "HARDENED");
+        runPayload.put("survivalSeconds", 180);
+        runPayload.put("processedCount", 70);
+        runPayload.put("waveReached", 7);
+        runPayload.put("activeSessionPeak", 12);
+        runPayload.put("creditsSpent", 490);
+        runPayload.put("systemHealthEnd", 15);
+        runPayload.put("score", 2395);
+
+        mockMvc.perform(post("/api/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(runPayload)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/players/phase8-user/runs?limit=5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].difficulty").value("HARDENED"))
+                .andExpect(jsonPath("$[0].score").value(2395));
+    }
 }

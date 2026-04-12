@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import type { Difficulty } from '@/shared/types/api';
 
 type SessionArchetype = 'LIGHT' | 'BATCH' | 'VALIDATOR';
 type DataArchetype = 'PACKET' | 'HEAVY_DOCUMENT' | 'CORRUPTED_DATA' | 'BURST_TRAFFIC';
@@ -23,6 +24,16 @@ type DataSpec = {
   color: number;
   strokeColor: number;
   size: number;
+};
+
+type DifficultyTuning = {
+  scoreMultiplier: number;
+  spawnPressureMultiplier: number;
+  creditRegenMultiplier: number;
+  dataHpMultiplier: number;
+  dataSpeedMultiplier: number;
+  startingCredits: number;
+  startingSystemHealth: number;
 };
 
 type SessionUnit = {
@@ -59,14 +70,14 @@ type RunSummaryPayload = {
   activeSessionPeak: number;
   score: number;
   mode: 'ENDLESS' | 'DAILY';
-  difficulty: 'STANDARD';
+  difficulty: Difficulty;
   challengeDate?: string;
   challengeSeed?: number;
 };
 
 export type PipelineRunOptions = {
   mode: 'ENDLESS' | 'DAILY';
-  difficulty: 'STANDARD';
+  difficulty: Difficulty;
   challengeDate?: string;
   challengeSeed?: number;
 };
@@ -78,6 +89,7 @@ const LANE_HEIGHT = 78;
 const BOARD_X = 84;
 const BOARD_Y = 104;
 const STARTING_CREDITS = 100;
+const STARTING_SYSTEM_HEALTH = 5;
 const CREDITS_REGEN_PER_SECOND = 9;
 
 const SESSION_SPECS: Record<SessionArchetype, SessionSpec> = {
@@ -153,6 +165,36 @@ const DATA_SPECS: Record<DataArchetype, DataSpec> = {
   },
 };
 
+const DIFFICULTY_TUNING: Record<Difficulty, DifficultyTuning> = {
+  STANDARD: {
+    scoreMultiplier: 1,
+    spawnPressureMultiplier: 1,
+    creditRegenMultiplier: 1,
+    dataHpMultiplier: 1,
+    dataSpeedMultiplier: 1,
+    startingCredits: STARTING_CREDITS,
+    startingSystemHealth: STARTING_SYSTEM_HEALTH,
+  },
+  HARDENED: {
+    scoreMultiplier: 1.25,
+    spawnPressureMultiplier: 1.2,
+    creditRegenMultiplier: 0.9,
+    dataHpMultiplier: 1.1,
+    dataSpeedMultiplier: 1.08,
+    startingCredits: 90,
+    startingSystemHealth: 4,
+  },
+  NIGHTMARE: {
+    scoreMultiplier: 1.5,
+    spawnPressureMultiplier: 1.4,
+    creditRegenMultiplier: 0.82,
+    dataHpMultiplier: 1.2,
+    dataSpeedMultiplier: 1.16,
+    startingCredits: 80,
+    startingSystemHealth: 3,
+  },
+};
+
 const RUN_COMPLETE_EVENT = 'session-defense:run-complete';
 
 export class PipelineScene extends Phaser.Scene {
@@ -168,7 +210,7 @@ export class PipelineScene extends Phaser.Scene {
 
   private wave = 1;
 
-  private systemHealth = 5;
+  private systemHealth = STARTING_SYSTEM_HEALTH;
 
   private elapsedSeconds = 0;
 
@@ -190,11 +232,16 @@ export class PipelineScene extends Phaser.Scene {
 
   private runOptions: PipelineRunOptions;
 
+  private difficultyTuning: DifficultyTuning;
+
   private randomizer?: Phaser.Math.RandomDataGenerator;
 
   constructor(runOptions?: PipelineRunOptions) {
     super('PipelineScene');
     this.runOptions = runOptions ?? { mode: 'ENDLESS', difficulty: 'STANDARD' };
+    this.difficultyTuning = DIFFICULTY_TUNING[this.runOptions.difficulty];
+    this.credits = this.difficultyTuning.startingCredits;
+    this.systemHealth = this.difficultyTuning.startingSystemHealth;
   }
 
   create() {
@@ -232,7 +279,7 @@ export class PipelineScene extends Phaser.Scene {
 
     const dt = deltaMs / 1000;
     this.elapsedSeconds += dt;
-    this.creditsAccumulator += dt * CREDITS_REGEN_PER_SECOND;
+    this.creditsAccumulator += dt * CREDITS_REGEN_PER_SECOND * this.difficultyTuning.creditRegenMultiplier;
 
     if (this.creditsAccumulator >= 1) {
       const wholeCredits = Math.floor(this.creditsAccumulator);
@@ -255,7 +302,7 @@ export class PipelineScene extends Phaser.Scene {
   }
 
   private drawBoard() {
-    this.add.text(18, 56, 'Session Pipeline Defense — Phase 5 Core Gameplay', {
+    this.add.text(18, 56, 'Session Pipeline Defense — Phase 8 Replayability', {
       fontFamily: 'Arial',
       fontSize: '18px',
       color: '#8bd3ff',
@@ -497,7 +544,7 @@ export class PipelineScene extends Phaser.Scene {
   private buildRunSummary(): RunSummaryPayload {
     const efficiencyBonus = Math.floor((this.processedCount * 100) / Math.max(1, this.creditsSpent + 20));
     const rawScore = this.processedCount * 10 + this.wave * 100 + Math.floor(this.elapsedSeconds * 2) + efficiencyBonus;
-    const score = Math.floor(rawScore * 1.25);
+    const score = Math.floor(rawScore * this.difficultyTuning.scoreMultiplier);
 
     return {
       processedCount: this.processedCount,
@@ -525,7 +572,7 @@ export class PipelineScene extends Phaser.Scene {
     const nextWave = Math.floor(this.elapsedSeconds / 15) + 1;
     if (nextWave > this.wave) {
       this.wave = nextWave;
-      this.spawnIntervalSeconds = Math.max(0.55, 2.1 - this.wave * 0.17);
+      this.spawnIntervalSeconds = Math.max(0.45, (2.1 - this.wave * 0.17) / this.difficultyTuning.spawnPressureMultiplier);
       this.setMessage(`Wave ${this.wave}: ingress traffic increased.`);
     }
   }
@@ -537,8 +584,8 @@ export class PipelineScene extends Phaser.Scene {
     const spec = DATA_SPECS[type];
 
     const scale = 1 + this.wave * 0.12;
-    const hp = Math.max(1, Math.floor(spec.baseHp * scale));
-    const speed = spec.speedPxPerSecond + this.wave * 2.3;
+    const hp = Math.max(1, Math.floor(spec.baseHp * scale * this.difficultyTuning.dataHpMultiplier));
+    const speed = (spec.speedPxPerSecond + this.wave * 2.3) * this.difficultyTuning.dataSpeedMultiplier;
     const startX = BOARD_X + (COLUMN_COUNT - 1) * CELL_WIDTH + 35;
 
     const sprite = this.add.rectangle(startX, laneY, spec.size, spec.size, spec.color, 1).setStrokeStyle(2, spec.strokeColor);
@@ -617,7 +664,7 @@ export class PipelineScene extends Phaser.Scene {
 
     const spec = SESSION_SPECS[this.selectedSessionType];
     this.hudText.setText(
-      `Mode: ${this.runOptions.mode} | Credits: ${Math.floor(this.credits)} | Health: ${this.systemHealth} | Processed: ${this.processedCount} | Wave: ${this.wave} | Time: ${Math.floor(this.elapsedSeconds)}s | Selected: ${spec.label} (${spec.cost})`,
+      `Mode: ${this.runOptions.mode} | Difficulty: ${this.runOptions.difficulty} | Credits: ${Math.floor(this.credits)} | Health: ${this.systemHealth} | Processed: ${this.processedCount} | Wave: ${this.wave} | Time: ${Math.floor(this.elapsedSeconds)}s | Selected: ${spec.label} (${spec.cost})`,
     );
   }
 

@@ -11,7 +11,7 @@ PvZ-inspired full-stack lane defense mini-game for **VibeCoding Challenge #3 —
 - ✅ Phase 5 complete: TTL/capacity lifecycle, archetypes, overload loss, run summary events
 - ✅ Phase 6 complete: run ingestion + persistence-backed global/daily leaderboard APIs
 - ✅ Phase 7 complete: deterministic server-seeded daily challenge endpoint wired into frontend daily mode
-- 🔜 Next: Phase 8 (difficulty/endless refinements + profile persistence/history)
+- ✅ Phase 8 complete: difficulty scaling, profile persistence, run history, and optional leaderboard auto-refresh
 
 ## Tech stack
 - **Backend:** Java 21, Spring Boot 3, Spring Web/Validation/JPA, Flyway, PostgreSQL driver
@@ -74,9 +74,8 @@ Frontend default URL:
 - Phaser canvas mounted in Play page with a visual placeholder scene.
 
 ## What is intentionally deferred
-- Difficulty presets/scaling refinement and profile persistence (Phase 8)
-- Run history page and nickname preference storage (Phase 8)
 - UX polish and onboarding/tooltips/balance tuning (Phase 9)
+- Final cleanup and extended QA checklist execution (Phase 10)
 
 
 ## Frontend architecture (FSD)
@@ -86,3 +85,10 @@ Frontend default URL:
 - `src/entities` — domain UI primitives (e.g., pipeline scene entity).
 - `src/features` — user features (reserved for next phases).
 - `src/shared` — shared styles/utils/types/api primitives.
+
+## Phase 8 highlights
+- Difficulty-aware endless gameplay tuning (STANDARD/HARDENED/NIGHTMARE) in Phaser loop.
+- Profile persistence endpoint (`POST /api/players/profile`) and retrieval endpoint (`GET /api/players/{nickname}`).
+- Run history endpoint (`GET /api/players/{nickname}/runs`) and dedicated frontend page.
+- Settings page now persists nickname + preferred difficulty (local + backend).
+- Leaderboards support optional 20s auto-refresh and manual refresh.

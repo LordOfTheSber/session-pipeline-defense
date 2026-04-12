@@ -120,7 +120,7 @@ const COLUMN_COUNT = 9;
 const CELL_WIDTH = 84;
 const LANE_HEIGHT = 78;
 const BOARD_X = 84;
-const BOARD_Y = 128;
+const BOARD_Y = 118;
 const STARTING_CREDITS = 100;
 const STARTING_SYSTEM_HEALTH = 5;
 const CREDITS_REGEN_PER_SECOND = 10;
@@ -312,12 +312,12 @@ export class PipelineScene extends Phaser.Scene {
       color: '#e2e8f0',
     });
 
-    this.messageText = this.add.text(18, 488, '', {
+    this.messageText = this.add.text(18, 474, '', {
       fontFamily: 'monospace',
       fontSize: '14px',
       color: '#93c5fd',
     });
-    this.helperText = this.add.text(18, 512, '', {
+    this.helperText = this.add.text(18, 496, '', {
       fontFamily: 'monospace',
       fontSize: '12px',
       color: '#86efac',
@@ -396,14 +396,14 @@ export class PipelineScene extends Phaser.Scene {
         this.add.rectangle(x, y, CELL_WIDTH - 4, LANE_HEIGHT - 12, 0x0f172a, 0.35).setStrokeStyle(1, 0x1f2937);
       }
 
-      this.add.text(26, y - 13, `Lane ${lane + 1}`, {
+      this.add.text(26, y - 13, this.runOptions.locale === 'ru' ? `Линия ${lane + 1}` : `Lane ${lane + 1}`, {
         fontFamily: 'monospace',
         fontSize: '13px',
         color: '#a5b4fc',
       });
     }
 
-    this.add.text(830, 467, 'Data ingress', {
+    this.add.text(810, 458, this.runOptions.locale === 'ru' ? 'Вход данных' : 'Data ingress', {
       fontFamily: 'monospace',
       fontSize: '12px',
       color: '#fda4af',
@@ -412,8 +412,11 @@ export class PipelineScene extends Phaser.Scene {
 
   private registerPlacementInput() {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (this.isRunOver || this.isPaused) {
+      if (this.isRunOver) {
         this.scene.restart();
+        return;
+      }
+      if (this.isPaused) {
         return;
       }
 
@@ -425,14 +428,18 @@ export class PipelineScene extends Phaser.Scene {
 
       const key = this.cellKey(lane, column);
       if (this.sessions.has(key)) {
-        this.setMessage('Session already active in this cell.');
+        this.setMessage(this.runOptions.locale === 'ru' ? 'В этой ячейке уже есть активная сессия.' : 'Session already active in this cell.');
         this.flashLane(lane, 0xf97316);
         return;
       }
 
       const spec = SESSION_SPECS[this.selectedSessionType];
       if (this.credits < spec.cost) {
-        this.setMessage(`${spec.label} requires ${spec.cost} Credits.`);
+        this.setMessage(
+          this.runOptions.locale === 'ru'
+            ? `${spec.label} требует ${spec.cost} кредитов.`
+            : `${spec.label} requires ${spec.cost} Credits.`,
+        );
         this.flashLane(lane, 0xef4444);
         return;
       }
@@ -440,7 +447,9 @@ export class PipelineScene extends Phaser.Scene {
       this.credits -= spec.cost;
       this.creditsSpent += spec.cost;
       this.deploySession(lane, column, this.selectedSessionType);
-      this.setMessage(`${spec.label} deployed in Lane ${lane + 1}.`);
+      this.setMessage(
+        this.runOptions.locale === 'ru' ? `${spec.label} размещена на линии ${lane + 1}.` : `${spec.label} deployed in Lane ${lane + 1}.`,
+      );
       this.emitPipelineEvent({ type: 'session.placed', lane, wave: this.wave, integrity: this.systemHealth });
       this.flashLane(lane, 0x22d3ee);
       this.renderHud();
@@ -450,7 +459,9 @@ export class PipelineScene extends Phaser.Scene {
   private selectSessionType(type: SessionArchetype) {
     this.selectedSessionType = type;
     const spec = SESSION_SPECS[type];
-    this.setMessage(`${spec.label} selected (${spec.cost} Credits).`);
+    this.setMessage(
+      this.runOptions.locale === 'ru' ? `${spec.label} выбрана (${spec.cost} кредитов).` : `${spec.label} selected (${spec.cost} Credits).`,
+    );
     this.renderSelectionHint();
     this.renderHud();
   }
@@ -536,9 +547,17 @@ export class PipelineScene extends Phaser.Scene {
       const ttlExpired = session.ttlSeconds <= 0;
       if (ttlExpired || capacitySpent) {
         if (ttlExpired) {
-          this.setMessage(`${spec.label} in Lane ${session.lane + 1} expired (TTL).`);
+          this.setMessage(
+            this.runOptions.locale === 'ru'
+              ? `${spec.label} на линии ${session.lane + 1} истекла по TTL.`
+              : `${spec.label} in Lane ${session.lane + 1} expired (TTL).`,
+          );
         } else {
-          this.setMessage(`${spec.label} in Lane ${session.lane + 1} retired (capacity spent).`);
+          this.setMessage(
+            this.runOptions.locale === 'ru'
+              ? `${spec.label} на линии ${session.lane + 1} завершена (исчерпана ёмкость).`
+              : `${spec.label} in Lane ${session.lane + 1} retired (capacity spent).`,
+          );
         }
         this.destroySession(key, session);
         this.emitPipelineEvent({ type: 'session.expired', lane: session.lane, wave: this.wave, integrity: this.systemHealth });
@@ -581,7 +600,11 @@ export class PipelineScene extends Phaser.Scene {
       if (packet.sprite.x <= BOARD_X - 32) {
         packet.sprite.destroy();
         this.systemHealth -= 1;
-        this.setMessage(`Overload in Lane ${packet.lane + 1}. System health reduced.`);
+        this.setMessage(
+          this.runOptions.locale === 'ru'
+            ? `Перегрузка на линии ${packet.lane + 1}. Целостность системы снижена.`
+            : `Overload in Lane ${packet.lane + 1}. System health reduced.`,
+        );
         this.emitPipelineEvent({ type: 'data.leaked', lane: packet.lane, wave: this.wave, integrity: this.systemHealth });
         this.flashLane(packet.lane, 0xdc2626);
         this.flashIntegrityLoss();
@@ -607,12 +630,16 @@ export class PipelineScene extends Phaser.Scene {
 
   private triggerSystemFailure() {
     this.isRunOver = true;
-    this.setMessage('System failure. Click the board to restart run.');
+    this.setMessage(
+      this.runOptions.locale === 'ru'
+        ? 'Сбой системы. Нажмите на поле, чтобы перезапустить попытку.'
+        : 'System failure. Click the board to restart run.',
+    );
     this.emitPipelineEvent({ type: 'run.loss', wave: this.wave, integrity: this.systemHealth });
 
     this.add.rectangle(450, 260, 760, 200, 0x020617, 0.88).setStrokeStyle(2, 0xef4444).setDepth(40);
     this.add
-      .text(450, 220, 'SYSTEM BREACH', {
+      .text(450, 220, this.runOptions.locale === 'ru' ? 'ПРОРЫВ СИСТЕМЫ' : 'SYSTEM BREACH', {
         fontFamily: 'monospace',
         fontSize: '40px',
         color: '#f87171',
@@ -622,20 +649,34 @@ export class PipelineScene extends Phaser.Scene {
 
     const summary = this.buildRunSummary();
     this.add
-      .text(450, 276, `Processed ${summary.processedCount} | Wave ${summary.waveReached} | Score ${summary.score}`, {
+      .text(
+        450,
+        276,
+        this.runOptions.locale === 'ru'
+          ? `Обработано ${summary.processedCount} | Волна ${summary.waveReached} | Счёт ${summary.score}`
+          : `Processed ${summary.processedCount} | Wave ${summary.waveReached} | Score ${summary.score}`,
+        {
         fontFamily: 'monospace',
         fontSize: '20px',
         color: '#fecaca',
-      })
+      },
+      )
       .setOrigin(0.5)
       .setDepth(41);
 
     this.add
-      .text(450, 314, `Survived ${summary.survivalSeconds}s | Sessions peak ${summary.activeSessionPeak}`, {
+      .text(
+        450,
+        314,
+        this.runOptions.locale === 'ru'
+          ? `Выживание ${summary.survivalSeconds}с | Пик сессий ${summary.activeSessionPeak}`
+          : `Survived ${summary.survivalSeconds}s | Sessions peak ${summary.activeSessionPeak}`,
+        {
         fontFamily: 'monospace',
         fontSize: '16px',
         color: '#fbcfe8',
-      })
+      },
+      )
       .setOrigin(0.5)
       .setDepth(41);
 
@@ -662,11 +703,18 @@ export class PipelineScene extends Phaser.Scene {
       .setDepth(41);
 
     this.add
-      .text(450, 276, `Processed ${summary.processedCount} | Wave ${summary.waveReached} | Score ${summary.score}`, {
+      .text(
+        450,
+        276,
+        this.runOptions.locale === 'ru'
+          ? `Обработано ${summary.processedCount} | Волна ${summary.waveReached} | Счёт ${summary.score}`
+          : `Processed ${summary.processedCount} | Wave ${summary.waveReached} | Score ${summary.score}`,
+        {
         fontFamily: 'monospace',
         fontSize: '20px',
         color: '#bae6fd',
-      })
+      },
+      )
       .setOrigin(0.5)
       .setDepth(41);
 
@@ -717,7 +765,9 @@ export class PipelineScene extends Phaser.Scene {
     if (nextWave > this.wave) {
       this.wave = nextWave;
       this.spawnIntervalSeconds = Math.max(0.45, (2.1 - this.wave * 0.17) / this.difficultyTuning.spawnPressureMultiplier);
-      this.setMessage(`Wave ${this.wave}: ingress traffic increased.`);
+      this.setMessage(
+        this.runOptions.locale === 'ru' ? `Волна ${this.wave}: входящий трафик усилился.` : `Wave ${this.wave}: ingress traffic increased.`,
+      );
       this.emitPipelineEvent({ type: 'wave.start', wave: this.wave, integrity: this.systemHealth });
       if (this.runOptions.mode === 'ENDLESS' && this.wave >= 25 && !this.sentWave25Hook) {
         this.sentWave25Hook = true;
@@ -822,7 +872,9 @@ export class PipelineScene extends Phaser.Scene {
 
     const spec = SESSION_SPECS[this.selectedSessionType];
     this.hudText.setText(
-      `Mode: ${this.runOptions.mode} | Difficulty: ${this.runOptions.difficulty} | Credits: ${Math.floor(this.credits)} | Health: ${this.systemHealth} | Processed: ${this.processedCount} | Wave: ${this.wave} | Time: ${Math.floor(this.elapsedSeconds)}s | Selected: ${spec.label} (${spec.cost})`,
+      this.runOptions.locale === 'ru'
+        ? `Режим: ${this.runOptions.mode} | Сложность: ${this.runOptions.difficulty} | Кредиты: ${Math.floor(this.credits)} | Здоровье: ${this.systemHealth} | Обработано: ${this.processedCount} | Волна: ${this.wave} | Время: ${Math.floor(this.elapsedSeconds)}с`
+        : `Mode: ${this.runOptions.mode} | Difficulty: ${this.runOptions.difficulty} | Credits: ${Math.floor(this.credits)} | Health: ${this.systemHealth} | Processed: ${this.processedCount} | Wave: ${this.wave} | Time: ${Math.floor(this.elapsedSeconds)}s`,
     );
     const maxHealth = this.difficultyTuning.startingSystemHealth;
     const integrityPercent = Math.round((Math.max(0, this.systemHealth) / maxHealth) * 100);
@@ -851,9 +903,15 @@ export class PipelineScene extends Phaser.Scene {
   private renderSelectionHint() {
     const spec = SESSION_SPECS[this.selectedSessionType];
     const dps = (spec.damage / spec.fireRateSeconds).toFixed(1);
-    const corruptedHint = spec.corruptedMultiplier ? ` | x${spec.corruptedMultiplier} vs Corrupted Data` : '';
+    const corruptedHint = spec.corruptedMultiplier
+      ? this.runOptions.locale === 'ru'
+        ? ` | x${spec.corruptedMultiplier} против повреждённых данных`
+        : ` | x${spec.corruptedMultiplier} vs Corrupted Data`
+      : '';
     this.helperText?.setText(
-      `${spec.label}: TTL ${spec.ttlSeconds}s | Capacity ${spec.capacity} | DPS ${dps}${corruptedHint}`,
+      this.runOptions.locale === 'ru'
+        ? `${spec.label}: TTL ${spec.ttlSeconds}с | Ёмкость ${spec.capacity} | DPS ${dps}${corruptedHint}`
+        : `${spec.label}: TTL ${spec.ttlSeconds}s | Capacity ${spec.capacity} | DPS ${dps}${corruptedHint}`,
     );
   }
 

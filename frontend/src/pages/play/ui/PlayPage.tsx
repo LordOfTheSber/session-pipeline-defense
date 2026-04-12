@@ -83,7 +83,7 @@ export function PlayPage() {
   const [summary, setSummary] = useState<LocalRunSummary | null>(null);
   const [submittedRun, setSubmittedRun] = useState<RunSubmissionResponse | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [ariaLine, setAriaLine] = useState('ARIA link idle... awaiting event stream.');
+  const [ariaLine, setAriaLine] = useState(locale === 'ru' ? 'Канал ARIA в ожидании событий...' : 'ARIA link idle... awaiting event stream.');
   const [typedLine, setTypedLine] = useState('');
   const [hud, setHud] = useState<PipelineHudPayload | null>(null);
   const [showBriefing, setShowBriefing] = useState(false);
@@ -274,10 +274,10 @@ export function PlayPage() {
 
       {mode === 'FIRST_SHIFT' && firstShiftSeen && (
         <div className="panel panel-accent">
-          <h3>Repeat operator detected</h3>
-          <p>Skip onboarding and jump directly into live Endless operations.</p>
+          <h3>{locale === 'ru' ? 'Обнаружен повторный оператор' : 'Repeat operator detected'}</h3>
+          <p>{locale === 'ru' ? 'Пропустите обучение и сразу перейдите в бесконечный режим.' : 'Skip onboarding and jump directly into live Endless operations.'}</p>
           <button type="button" onClick={onSkipFirstShift}>
-            Skip first shift
+            {locale === 'ru' ? 'Пропустить первую смену' : 'Skip first shift'}
           </button>
         </div>
       )}
@@ -299,7 +299,7 @@ export function PlayPage() {
           </p>
           {!dailyStarted && (
             <button type="button" onClick={() => setDailyStarted(true)}>
-              BEGIN RECONSTRUCTION
+              {locale === 'ru' ? 'НАЧАТЬ РЕКОНСТРУКЦИЮ' : 'BEGIN RECONSTRUCTION'}
             </button>
           )}
         </div>
@@ -311,17 +311,17 @@ export function PlayPage() {
 
       {showBriefing && (
         <div className="panel panel-accent">
-          <h3>SHIFT BRIEFING COMPLETE</h3>
+          <h3>{locale === 'ru' ? 'БРИФИНГ СМЕНЫ ЗАВЕРШЁН' : 'SHIFT BRIEFING COMPLETE'}</h3>
           <p>
             Callsign acknowledged for <strong>{nickname}</strong>. Endless and Daily queues are unlocked. First Codex fragment is now
             available.
           </p>
           <p>
             <button type="button" onClick={() => navigate('/codex')}>
-              Open Codex
+              {locale === 'ru' ? 'Открыть кодекс' : 'Open Codex'}
             </button>{' '}
             <button type="button" onClick={() => navigate(`/play?difficulty=${selectedDifficulty}`)}>
-              Begin Endless Shift
+              {locale === 'ru' ? 'Начать бесконечную смену' : 'Begin Endless Shift'}
             </button>
           </p>
         </div>
@@ -329,7 +329,7 @@ export function PlayPage() {
 
       {summary && (
         <div className="panel">
-          <h3>Latest Shift Outcome</h3>
+          <h3>{locale === 'ru' ? 'Результат последней смены' : 'Latest Shift Outcome'}</h3>
           <ul>
             <li>Mode: {summary.mode}</li>
             <li>Difficulty: {summary.difficulty}</li>

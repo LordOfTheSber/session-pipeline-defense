@@ -2,7 +2,14 @@ import { useCallback, useState } from 'react';
 import type { FormEvent } from 'react';
 import { gameApi } from '@/shared/api/gameApi';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
-import { getStoredDifficulty, getStoredNickname, setStoredDifficulty, setStoredNickname } from '@/shared/lib/profilePrefs';
+import {
+  getConsoleAudioPrefs,
+  getStoredDifficulty,
+  getStoredNickname,
+  setConsoleAudioPrefs,
+  setStoredDifficulty,
+  setStoredNickname,
+} from '@/shared/lib/profilePrefs';
 import type { Difficulty } from '@/shared/types/api';
 import { ErrorState, LoadingState } from '@/shared/ui/ResourceState';
 
@@ -11,6 +18,7 @@ export function SettingsPage() {
   const health = useAsyncResource(loadHealth);
   const [nickname, setNickname] = useState(getStoredNickname());
   const [difficulty, setDifficulty] = useState<Difficulty>(getStoredDifficulty());
+  const [audioPrefs, setAudioPrefs] = useState(getConsoleAudioPrefs());
   const [status, setStatus] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -29,6 +37,7 @@ export function SettingsPage() {
       const profile = await gameApi.upsertPlayerProfile(normalizedNickname, difficulty);
       setStoredNickname(profile.nickname);
       setStoredDifficulty(profile.preferredDifficulty);
+      setConsoleAudioPrefs(audioPrefs);
       setStatus(`Saved profile ${profile.nickname} with preferred difficulty ${profile.preferredDifficulty}.`);
     } catch {
       setSaveError('Could not persist profile preferences to backend.');
@@ -76,6 +85,36 @@ export function SettingsPage() {
         </select>
 
         <button type="submit">Save Profile</button>
+        <h3>Console Audio Mix</h3>
+        <label htmlFor="uiVolume">UI clicks: {audioPrefs.uiVolume}%</label>
+        <input
+          id="uiVolume"
+          type="range"
+          min={0}
+          max={100}
+          value={audioPrefs.uiVolume}
+          onChange={(event) => setAudioPrefs((prev) => ({ ...prev, uiVolume: Number(event.target.value) }))}
+        />
+
+        <label htmlFor="ambienceVolume">Data-center hum: {audioPrefs.ambienceVolume}%</label>
+        <input
+          id="ambienceVolume"
+          type="range"
+          min={0}
+          max={100}
+          value={audioPrefs.ambienceVolume}
+          onChange={(event) => setAudioPrefs((prev) => ({ ...prev, ambienceVolume: Number(event.target.value) }))}
+        />
+
+        <label htmlFor="ariaBeepVolume">ARIA voice beep: {audioPrefs.ariaBeepVolume}%</label>
+        <input
+          id="ariaBeepVolume"
+          type="range"
+          min={0}
+          max={100}
+          value={audioPrefs.ariaBeepVolume}
+          onChange={(event) => setAudioPrefs((prev) => ({ ...prev, ariaBeepVolume: Number(event.target.value) }))}
+        />
         {status && <p>{status}</p>}
         {saveError && <p>{saveError}</p>}
       </form>

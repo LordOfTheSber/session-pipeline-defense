@@ -12,6 +12,10 @@ export function MainMenuPage() {
         breach.
       </p>
       <div className="card-grid">
+        <Link to="/play?mode=FIRST_SHIFT" className="menu-card">
+          <h3>First Shift</h3>
+          <p>Story onboarding: ARIA walks Operator-7 through a safe mini-wave without modal tutorials.</p>
+        </Link>
         <Link to={`/play?difficulty=${preferredDifficulty}`} className="menu-card">
           <h3>Endless Run</h3>
           <p>Begin endless survival with lane-based data pressure at {preferredDifficulty}.</p>
@@ -27,6 +31,10 @@ export function MainMenuPage() {
         <Link to="/run-history" className="menu-card">
           <h3>Run History</h3>
           <p>Inspect your recent runs for the saved nickname.</p>
+        </Link>
+        <Link to="/codex" className="menu-card">
+          <h3>Codex</h3>
+          <p>Review unlocked lore terms and recovered log fragments.</p>
         </Link>
         <Link to="/settings" className="menu-card">
           <h3>Profile & Settings</h3>

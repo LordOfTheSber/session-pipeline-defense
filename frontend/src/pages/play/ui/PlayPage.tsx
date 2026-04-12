@@ -1,12 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { gameApi } from '@/shared/api/gameApi';
 import { ApiError } from '@/shared/api/http';
 import { getStoredDifficulty, getStoredNickname } from '@/shared/lib/profilePrefs';
 import type { Difficulty, RunSubmissionResponse } from '@/shared/types/api';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
 import { ErrorState, LoadingState } from '@/shared/ui/ResourceState';
-import type { PipelineRunOptions } from '@/entities/pipeline/ui/PipelineScene';
+import { act1AriaLines } from '@/narrative/acts/act1';
+import {
+  HUD_UPDATE_EVENT,
+  PIPELINE_EVENT,
+  RUN_COMPLETE_EVENT,
+  type PipelineEventPayload,
+  type PipelineHudPayload,
+  type PipelineRunOptions,
+} from '@/entities/pipeline/ui/PipelineScene';
 import { PhaserGameCanvas } from '../../../widgets/phaser-game/ui/PhaserGameCanvas';
 
 type LocalRunSummary = {
@@ -17,17 +25,47 @@ type LocalRunSummary = {
   systemHealthEnd: number;
   activeSessionPeak: number;
   score: number;
-  mode: 'ENDLESS' | 'DAILY';
+  mode: 'ENDLESS' | 'DAILY' | 'FIRST_SHIFT';
   difficulty: Difficulty;
   challengeDate?: string;
   challengeSeed?: number;
 };
 
-const RUN_COMPLETE_EVENT = 'session-defense:run-complete';
+const ARIA_LINE_EVENT = 'session-defense:aria-scripted-line';
+const ARIA_COOLDOWN_MS = 3500;
+
+function pickAriaLine(type: PipelineEventPayload['type']): string | null {
+  const triggerMap: Partial<Record<PipelineEventPayload['type'], string[]>> = {
+    'run.start': ['run.start'],
+    'session.placed': ['session.first_placed'],
+    'session.expired': ['session.first_expired'],
+    'data.corrupted': ['data.corrupted_first_seen'],
+    'data.leaked': ['data.first_leaked'],
+    'wave.start': ['wave.first_start', 'wave.reached_5'],
+    'health.critical': ['health.critical'],
+    'run.loss': ['run.loss'],
+  };
+
+  const triggers = triggerMap[type] ?? [];
+  const pool = act1AriaLines.filter((line) => triggers.includes(line.trigger));
+  if (!pool.length) {
+    return null;
+  }
+
+  return pool.sort((a, b) => b.priority - a.priority)[0].text;
+}
+
+function renderIntegrityBar(percent: number): string {
+  const clamped = Math.max(0, Math.min(percent, 100));
+  const filled = Math.round(clamped / 10);
+  return `${'█'.repeat(filled)}${'░'.repeat(10 - filled)}`;
+}
 
 export function PlayPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const mode = searchParams.get('mode') === 'DAILY' ? 'DAILY' : 'ENDLESS';
+  const rawMode = searchParams.get('mode');
+  const mode: PipelineRunOptions['mode'] = rawMode === 'DAILY' ? 'DAILY' : rawMode === 'FIRST_SHIFT' ? 'FIRST_SHIFT' : 'ENDLESS';
   const queryDifficulty = searchParams.get('difficulty');
   const storedDifficulty = getStoredDifficulty();
   const selectedDifficulty: Difficulty =
@@ -36,15 +74,24 @@ export function PlayPage() {
       : storedDifficulty;
 
   const nickname = getStoredNickname();
-
   const [summary, setSummary] = useState<LocalRunSummary | null>(null);
   const [submittedRun, setSubmittedRun] = useState<RunSubmissionResponse | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [ariaLine, setAriaLine] = useState('ARIA link idle... awaiting event stream.');
+  const [typedLine, setTypedLine] = useState('');
+  const [hud, setHud] = useState<PipelineHudPayload | null>(null);
+  const [showBriefing, setShowBriefing] = useState(false);
+  const lastAriaAtRef = useRef(0);
+
   const loadDailyChallenge = useCallback(
     () => (mode === 'DAILY' ? gameApi.getDailyChallenge() : Promise.resolve(null)),
     [mode],
   );
   const dailyChallenge = useAsyncResource(loadDailyChallenge);
+
+  const loadNarrativeState = useCallback(() => gameApi.getNarrativeState(nickname), [nickname]);
+  const narrativeState = useAsyncResource(loadNarrativeState);
+  const firstShiftSeen = Boolean(narrativeState.data?.seenBeatKeys.includes('act1.init_shift'));
 
   const runOptions = useMemo<PipelineRunOptions>(() => {
     if (mode === 'DAILY' && dailyChallenge.data) {
@@ -56,21 +103,51 @@ export function PlayPage() {
       };
     }
 
+    if (mode === 'FIRST_SHIFT') {
+      return { mode: 'FIRST_SHIFT', difficulty: 'STANDARD' };
+    }
+
     return { mode: 'ENDLESS', difficulty: selectedDifficulty };
   }, [dailyChallenge.data, mode, selectedDifficulty]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTypedLine((current) => {
+        if (current.length >= ariaLine.length) {
+          return current;
+        }
+
+        return ariaLine.slice(0, current.length + 1);
+      });
+    }, 22);
+
+    return () => clearInterval(timer);
+  }, [ariaLine]);
+
+  useEffect(() => {
+    setTypedLine('');
+  }, [ariaLine]);
 
   useEffect(() => {
     const onRunComplete = async (event: Event) => {
       const customEvent = event as CustomEvent<LocalRunSummary>;
       const runSummary = customEvent.detail;
+      if (runSummary.mode === 'FIRST_SHIFT') {
+        setShowBriefing(true);
+        await gameApi.markNarrativeSeen({ nickname, beatKey: 'act1.init_shift' });
+        return;
+      }
+
       setSummary(runSummary);
       setSubmitError(null);
       setSubmittedRun(null);
 
       try {
+        const { mode: summaryMode, ...summaryRest } = runSummary;
         const response = await gameApi.submitRun({
           nickname,
-          ...runSummary,
+          ...summaryRest,
+          mode: summaryMode as 'ENDLESS' | 'DAILY',
         });
         setSubmittedRun(response);
       } catch (error) {
@@ -83,27 +160,85 @@ export function PlayPage() {
       }
     };
 
+    const onPipelineEvent = (event: Event) => {
+      const detail = (event as CustomEvent<PipelineEventPayload>).detail;
+      if (Date.now() - lastAriaAtRef.current < ARIA_COOLDOWN_MS && detail.type !== 'run.loss') {
+        return;
+      }
+
+      const line = pickAriaLine(detail.type);
+      if (!line) {
+        return;
+      }
+
+      setAriaLine(line);
+      lastAriaAtRef.current = Date.now();
+    };
+
+    const onScriptedLine = (event: Event) => {
+      const line = (event as CustomEvent<{ line: string }>).detail.line;
+      setAriaLine(line);
+      lastAriaAtRef.current = Date.now();
+    };
+
+    const onHudUpdate = (event: Event) => {
+      setHud((event as CustomEvent<PipelineHudPayload>).detail);
+    };
+
     window.addEventListener(RUN_COMPLETE_EVENT, onRunComplete);
+    window.addEventListener(PIPELINE_EVENT, onPipelineEvent);
+    window.addEventListener(ARIA_LINE_EVENT, onScriptedLine);
+    window.addEventListener(HUD_UPDATE_EVENT, onHudUpdate);
+
     return () => {
       window.removeEventListener(RUN_COMPLETE_EVENT, onRunComplete);
+      window.removeEventListener(PIPELINE_EVENT, onPipelineEvent);
+      window.removeEventListener(ARIA_LINE_EVENT, onScriptedLine);
+      window.removeEventListener(HUD_UPDATE_EVENT, onHudUpdate);
     };
   }, [nickname]);
 
+  const onSkipFirstShift = () => {
+    const confirmed = window.confirm('// ARIA: понял, ты уже бывал здесь. Пропустить первую смену?');
+    if (confirmed) {
+      navigate(`/play?difficulty=${selectedDifficulty}`);
+    }
+  };
+
   return (
     <section>
-      <h2>Play</h2>
+      <h2>Division Console</h2>
       <p>
-        Endless mode now scales by selected difficulty. Active profile: <strong>{nickname}</strong>. Difficulty:{' '}
-        <strong>{selectedDifficulty}</strong>.
+        Active operator: <strong>{nickname}</strong>. Mode: <strong>{mode}</strong>. Difficulty:{' '}
+        <strong>{runOptions.mode === 'FIRST_SHIFT' ? 'STANDARD' : selectedDifficulty}</strong>.
       </p>
-      <div className="panel panel-accent">
-        <h3>Quick onboarding</h3>
-        <ul>
-          <li>Deploy Sessions with keys 1–3 + lane click. Keep some Credits in reserve for burst lanes.</li>
-          <li>Sessions retire by TTL or capacity, so rotate placements before lanes collapse.</li>
-          <li>Validator Sessions are best against Corrupted Data and stabilize late-wave spikes.</li>
-        </ul>
+
+      <div className="panel panel-console">
+        <div className="metrics-grid">
+          <div>INTEGRITY {renderIntegrityBar(hud?.integrityPercent ?? 100)} {hud?.integrityPercent ?? 100}%</div>
+          <div>COMPUTE {hud?.credits ?? 0} ¢</div>
+          <div>SURGE CYCLE {String(hud?.wave ?? 1).padStart(2, '0')}</div>
+          <div>THROUGHPUT {hud?.processed ?? 0}</div>
+          <div>SHIFT {hud?.timeSeconds ?? 0}s</div>
+          <div>SESSION PROFILE {hud?.selectedSessionLabel ?? 'Light Session'}</div>
+        </div>
       </div>
+
+      <div className="aria-panel" role="status" aria-live="polite">
+        <div className="aria-tag">// ARIA</div>
+        <div className="aria-line">{typedLine}</div>
+      </div>
+
+      {mode === 'FIRST_SHIFT' && firstShiftSeen && (
+        <div className="panel panel-accent">
+          <h3>Repeat operator detected</h3>
+          <p>Skip onboarding and jump directly into live Endless operations.</p>
+          <button type="button" onClick={onSkipFirstShift}>
+            Skip first shift
+          </button>
+        </div>
+      )}
+
       {mode === 'DAILY' && dailyChallenge.isLoading && <LoadingState label="daily challenge seed" />}
       {mode === 'DAILY' && dailyChallenge.error && (
         <ErrorState
@@ -113,7 +248,7 @@ export function PlayPage() {
       )}
       {mode === 'DAILY' && dailyChallenge.data && (
         <div className="panel">
-          <h3>Daily Challenge ({dailyChallenge.data.challengeDate})</h3>
+          <h3>RECOVERED DAILY CHALLENGE ({dailyChallenge.data.challengeDate})</h3>
           <p>
             Seed <code>{dailyChallenge.data.seed}</code> with modifiers:
           </p>
@@ -126,7 +261,26 @@ export function PlayPage() {
           </ul>
         </div>
       )}
-      {(mode === 'ENDLESS' || dailyChallenge.data) && <PhaserGameCanvas runOptions={runOptions} />}
+
+      {(mode === 'ENDLESS' || mode === 'FIRST_SHIFT' || dailyChallenge.data) && <PhaserGameCanvas runOptions={runOptions} />}
+
+      {showBriefing && (
+        <div className="panel panel-accent">
+          <h3>SHIFT BRIEFING COMPLETE</h3>
+          <p>
+            Callsign acknowledged for <strong>{nickname}</strong>. Endless and Daily queues are unlocked. First Codex fragment is now
+            available.
+          </p>
+          <p>
+            <button type="button" onClick={() => navigate('/codex')}>
+              Open Codex
+            </button>{' '}
+            <button type="button" onClick={() => navigate(`/play?difficulty=${selectedDifficulty}`)}>
+              Begin Endless Shift
+            </button>
+          </p>
+        </div>
+      )}
 
       {summary && (
         <div className="panel">
@@ -154,6 +308,9 @@ export function PlayPage() {
           {submitError && <p>{submitError}</p>}
         </div>
       )}
+
+      {narrativeState.isLoading && <LoadingState label="narrative state" />}
+      {narrativeState.error && <p className="muted">Narrative progression service unavailable; onboarding state may not persist.</p>}
     </section>
   );
 }

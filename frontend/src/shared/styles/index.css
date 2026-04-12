@@ -1,5 +1,5 @@
 :root {
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
   line-height: 1.4;
   font-weight: 400;
   color: #e2e8f0;
@@ -13,7 +13,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at top, #0f172a 0%, #020617 60%);
+  background:
+    repeating-linear-gradient(0deg, rgba(103, 232, 249, 0.02) 0px, rgba(103, 232, 249, 0.02) 1px, transparent 1px, transparent 3px),
+    radial-gradient(circle at top, #0b1f2e 0%, #020617 58%);
 }
 
 a {
@@ -90,9 +92,10 @@ select {
 .phaser-host {
   width: 900px;
   max-width: 100%;
-  border: 1px solid #334155;
+  border: 1px solid #155e75;
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: inset 0 0 35px rgba(34, 211, 238, 0.08);
 }
 
 .state-loading {
@@ -132,4 +135,38 @@ select {
 .muted {
   color: #94a3b8;
   font-size: 0.92rem;
+}
+
+.panel-console {
+  border-color: #0e7490;
+  background: rgba(8, 47, 73, 0.22);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: #cffafe;
+}
+
+.aria-panel {
+  border: 1px solid #155e75;
+  background: rgba(8, 47, 73, 0.34);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  margin: 0.85rem 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.aria-tag {
+  font-size: 0.8rem;
+  color: #67e8f9;
+  letter-spacing: 0.04em;
+}
+
+.aria-line {
+  color: #e0f2fe;
+  min-height: 1.35rem;
 }

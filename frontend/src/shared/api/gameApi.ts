@@ -1,5 +1,6 @@
 import { fetchJson } from './http';
 import type {
+  DailyChallengeResponse,
   HealthResponse,
   LeaderboardEntry,
   RunSubmissionRequest,
@@ -10,6 +11,10 @@ import type {
 export const gameApi = {
   getHealth(): Promise<HealthResponse> {
     return fetchJson<HealthResponse>('/api/health');
+  },
+
+  getDailyChallenge(): Promise<DailyChallengeResponse> {
+    return fetchJson<DailyChallengeResponse>('/api/challenges/daily');
   },
 
   submitRun(payload: RunSubmissionRequest): Promise<RunSubmissionResponse> {

@@ -45,12 +45,13 @@ public class RunService {
         run.setMode(request.mode());
         run.setDifficulty(request.difficulty());
 
-        LocalDate challengeDate = request.challengeDate();
-        if (challengeDate == null) {
-            challengeDate = LocalDate.now(java.time.ZoneOffset.ofHours(3));
+        if (request.mode() == GameMode.DAILY) {
+            run.setChallengeDate(request.challengeDate());
+            run.setChallengeSeed(request.challengeSeed());
+        } else {
+            run.setChallengeDate(null);
+            run.setChallengeSeed(null);
         }
-        run.setChallengeDate(challengeDate);
-        run.setChallengeSeed(request.challengeSeed());
         run.setSurvivalSeconds(request.survivalSeconds());
         run.setProcessedCount(request.processedCount());
         run.setWaveReached(request.waveReached());

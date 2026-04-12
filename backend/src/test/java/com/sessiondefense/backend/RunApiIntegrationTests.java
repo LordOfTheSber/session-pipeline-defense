@@ -34,6 +34,20 @@ class RunApiIntegrationTests {
     private DailyChallengeRepository dailyChallengeRepository;
 
     @Test
+    void shouldCreateAndReturnDailyChallengeDeterministically() throws Exception {
+        mockMvc.perform(get("/api/challenges/daily"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.challengeDate").isNotEmpty())
+                .andExpect(jsonPath("$.seed").isNumber())
+                .andExpect(jsonPath("$.challengeModifiers.spawnPressureMultiplier").isNumber())
+                .andExpect(jsonPath("$.leaderboardWindowKey").isNotEmpty());
+
+        mockMvc.perform(get("/api/challenges/daily"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.seed").isNumber());
+    }
+
+    @Test
     void shouldSubmitRunAndReturnCreatedResponse() throws Exception {
         Map<String, Object> payload = new HashMap<>();
         payload.put("nickname", "ops-pro");
@@ -57,7 +71,7 @@ class RunApiIntegrationTests {
 
 
     @Test
-    void shouldIncludeTodaysEndlessRunsInDailyLeaderboard() throws Exception {
+    void shouldNotIncludeEndlessRunsInDailyLeaderboard() throws Exception {
         Map<String, Object> payload = new HashMap<>();
         payload.put("nickname", "today-ops");
         payload.put("mode", "ENDLESS");
@@ -78,25 +92,28 @@ class RunApiIntegrationTests {
         String today = LocalDate.now(java.time.ZoneOffset.ofHours(3)).toString();
         mockMvc.perform(get("/api/leaderboards/daily?date=" + today + "&difficulty=STANDARD&limit=5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nickname").value("today-ops"));
+                .andExpect(jsonPath("$").isEmpty());
     }
 
     @Test
     void shouldReturnGlobalAndDailyLeaderboards() throws Exception {
-        DailyChallenge challenge = new DailyChallenge();
-        challenge.setId(UUID.randomUUID());
-        challenge.setChallengeDate(LocalDate.of(2026, 4, 10));
-        challenge.setSeed(777L);
-        challenge.setConfigJson("{}");
-        challenge.setCreatedAt(Instant.now());
-        dailyChallengeRepository.save(challenge);
+        DailyChallenge challenge = dailyChallengeRepository.findByChallengeDate(LocalDate.of(2026, 4, 10))
+                .orElseGet(() -> {
+                    DailyChallenge value = new DailyChallenge();
+                    value.setId(UUID.randomUUID());
+                    value.setChallengeDate(LocalDate.of(2026, 4, 10));
+                    value.setSeed(777L);
+                    value.setConfigJson(Map.of());
+                    value.setCreatedAt(Instant.now());
+                    return dailyChallengeRepository.save(value);
+                });
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("nickname", "daily-runner");
         payload.put("mode", "DAILY");
         payload.put("difficulty", "STANDARD");
         payload.put("challengeDate", "2026-04-10");
-        payload.put("challengeSeed", 777L);
+        payload.put("challengeSeed", challenge.getSeed());
         payload.put("survivalSeconds", 140);
         payload.put("processedCount", 52);
         payload.put("waveReached", 5);
@@ -117,5 +134,35 @@ class RunApiIntegrationTests {
         mockMvc.perform(get("/api/leaderboards/daily?date=2026-04-10&difficulty=STANDARD&limit=5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].mode").value("DAILY"));
+    }
+
+    @Test
+    void shouldSubmitDailyRunUsingChallengeFromDailyEndpoint() throws Exception {
+        String payload = mockMvc.perform(get("/api/challenges/daily"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Map<String, Object> challenge = objectMapper.readValue(payload, Map.class);
+        Map<String, Object> submission = new HashMap<>();
+        submission.put("nickname", "seed-consumer");
+        submission.put("mode", "DAILY");
+        submission.put("difficulty", "STANDARD");
+        submission.put("challengeDate", challenge.get("challengeDate"));
+        submission.put("challengeSeed", ((Number) challenge.get("seed")).longValue());
+        submission.put("survivalSeconds", 110);
+        submission.put("processedCount", 40);
+        submission.put("waveReached", 4);
+        submission.put("activeSessionPeak", 8);
+        submission.put("creditsSpent", 230);
+        submission.put("systemHealthEnd", 36);
+        submission.put("score", 1250);
+
+        mockMvc.perform(post("/api/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(submission)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.suspicious").value(false));
     }
 }

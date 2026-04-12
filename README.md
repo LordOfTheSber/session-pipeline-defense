@@ -7,7 +7,11 @@ PvZ-inspired full-stack lane defense mini-game for **VibeCoding Challenge #3 —
 - ✅ Phase 1 complete: project scaffold + local infrastructure
 - ✅ Phase 2 complete: Flyway baseline migration + core JPA entities/repositories
 - ✅ Phase 3 complete: shell integration + typed API client + loading/error states
-- 🔜 Next: Phase 4 (gameplay vertical slice)
+- ✅ Phase 4 complete: playable lane/grid/session placement + data ingress/combat loop
+- ✅ Phase 5 complete: TTL/capacity lifecycle, archetypes, overload loss, run summary events
+- ✅ Phase 6 complete: run ingestion + persistence-backed global/daily leaderboard APIs
+- ✅ Phase 7 complete: deterministic server-seeded daily challenge endpoint wired into frontend daily mode
+- 🔜 Next: Phase 8 (difficulty/endless refinements + profile persistence/history)
 
 ## Tech stack
 - **Backend:** Java 21, Spring Boot 3, Spring Web/Validation/JPA, Flyway, PostgreSQL driver
@@ -70,10 +74,9 @@ Frontend default URL:
 - Phaser canvas mounted in Play page with a visual placeholder scene.
 
 ## What is intentionally deferred
-- Real leaderboard and run APIs (Phase 6)
-- Daily challenge API integration (Phase 7)
-- Full lane-defense gameplay loop (Phase 4+)
-- Real run submission validation + persistence views (Phase 6)
+- Difficulty presets/scaling refinement and profile persistence (Phase 8)
+- Run history page and nickname preference storage (Phase 8)
+- UX polish and onboarding/tooltips/balance tuning (Phase 9)
 
 
 ## Frontend architecture (FSD)

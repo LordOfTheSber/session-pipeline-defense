@@ -10,8 +10,12 @@ export function MainMenuPage() {
       </p>
       <div className="card-grid">
         <Link to="/play" className="menu-card">
-          <h3>Start Run</h3>
-          <p>Begin a survival run with lane-based data pressure.</p>
+          <h3>Endless Run</h3>
+          <p>Begin endless survival with lane-based data pressure.</p>
+        </Link>
+        <Link to="/play?mode=DAILY" className="menu-card">
+          <h3>Daily Challenge</h3>
+          <p>Play today’s server-seeded deterministic challenge run.</p>
         </Link>
         <Link to="/leaderboards" className="menu-card">
           <h3>Leaderboards</h3>

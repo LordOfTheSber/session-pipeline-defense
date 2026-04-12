@@ -1,8 +1,12 @@
 import * as Phaser from 'phaser';
 import { useEffect, useRef } from 'react';
-import { PipelineScene } from '../../../entities/pipeline/ui/PipelineScene';
+import { PipelineScene, type PipelineRunOptions } from '../../../entities/pipeline/ui/PipelineScene';
 
-export function PhaserGameCanvas() {
+type PhaserGameCanvasProps = {
+  runOptions: PipelineRunOptions;
+};
+
+export function PhaserGameCanvas({ runOptions }: PhaserGameCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -16,13 +20,13 @@ export function PhaserGameCanvas() {
       height: 520,
       parent: containerRef.current,
       backgroundColor: '#0b1320',
-      scene: [PipelineScene],
+      scene: [new PipelineScene(runOptions)],
     });
 
     return () => {
       game.destroy(true);
     };
-  }, []);
+  }, [runOptions]);
 
   return <div ref={containerRef} className="phaser-host" />;
 }

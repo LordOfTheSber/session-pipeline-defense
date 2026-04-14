@@ -200,7 +200,9 @@ export function PlayPage() {
       } catch (error) {
         if (error instanceof ApiError) {
           const detailText = error.details?.length ? ` (${error.details.join(' | ')})` : '';
-          setSubmitError(`Run submission failed: ${error.message}${detailText}`);
+          setSubmitError(
+            locale === 'ru' ? `Не удалось отправить результат: ${error.message}${detailText}` : `Run submission failed: ${error.message}${detailText}`,
+          );
           return;
         }
         setSubmitError(locale === 'ru' ? 'Не удалось отправить результат. Возможно, backend недоступен.' : 'Run submission failed. Backend may be unavailable.');
@@ -265,7 +267,7 @@ export function PlayPage() {
         {t(locale, 'activeOperator')}: <strong>{nickname}</strong>. {t(locale, 'mode')}: <strong>{mode}</strong>. {t(locale, 'difficulty')}:{' '}
         <strong>{runOptions.mode === 'FIRST_SHIFT' ? 'STANDARD' : selectedDifficulty}</strong>.
       </p>
-      {mode === 'TIMED' && <p>{locale === 'ru' ? `Лимит времени: ${runOptions.timeLimitSeconds}s.` : `Time limit: ${runOptions.timeLimitSeconds}s.`}</p>}
+      {mode === 'TIMED' && <p>{locale === 'ru' ? `Лимит времени: ${runOptions.timeLimitSeconds}с.` : `Time limit: ${runOptions.timeLimitSeconds}s.`}</p>}
       {(mode === 'ENDLESS' || mode === 'DAILY' || mode === 'TIMED') && (
         <button type="button" onClick={onTogglePause}>
           {paused ? t(locale, 'resume') : t(locale, 'pause')}
@@ -274,11 +276,11 @@ export function PlayPage() {
 
       <div className="panel panel-console">
         <div className="metrics-grid">
-          <div>INTEGRITY {renderIntegrityBar(hud?.integrityPercent ?? 100)} {hud?.integrityPercent ?? 100}%</div>
-          <div>COMPUTE {hud?.credits ?? 0} ¢</div>
-          <div>SURGE CYCLE {String(hud?.wave ?? 1).padStart(2, '0')}</div>
-          <div>THROUGHPUT {hud?.processed ?? 0}</div>
-          <div>SHIFT {hud?.timeSeconds ?? 0}s</div>
+          <div>{locale === 'ru' ? 'ЦЕЛОСТНОСТЬ' : 'INTEGRITY'} {renderIntegrityBar(hud?.integrityPercent ?? 100)} {hud?.integrityPercent ?? 100}%</div>
+          <div>{locale === 'ru' ? 'КОМПЬЮТ' : 'COMPUTE'} {hud?.credits ?? 0} ¢</div>
+          <div>{locale === 'ru' ? 'ЦИКЛ SURGE' : 'SURGE CYCLE'} {String(hud?.wave ?? 1).padStart(2, '0')}</div>
+          <div>{locale === 'ru' ? 'ПРОПУСКНАЯ СПОСОБНОСТЬ' : 'THROUGHPUT'} {hud?.processed ?? 0}</div>
+          <div>{locale === 'ru' ? 'СМЕНА' : 'SHIFT'} {hud?.timeSeconds ?? 0}{locale === 'ru' ? 'с' : 's'}</div>
           <div>{locale === 'ru' ? 'ПРОФИЛЬ СЕССИИ' : 'SESSION PROFILE'} {localizeSessionLabel(hud?.selectedSessionLabel ?? 'Light Session', locale)}</div>
         </div>
       </div>

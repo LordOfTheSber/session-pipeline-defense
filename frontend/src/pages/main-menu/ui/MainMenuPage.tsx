@@ -43,7 +43,7 @@ export function MainMenuPage() {
           <p>{locale === 'ru' ? 'Просмотр глобальной и ежедневной производительности.' : 'Review global and daily throughput performance.'}</p>
         </Link>
         <Link to="/codex" className="menu-card">
-          <h3>CODEX</h3>
+          <h3>{locale === 'ru' ? 'КОДЕКС' : 'CODEX'}</h3>
           <p>{locale === 'ru' ? 'Просмотрите открытые термины лора и восстановленные фрагменты логов.' : 'Review unlocked lore terms and recovered log fragments.'}</p>
         </Link>
         <Link to="/settings" className="menu-card">

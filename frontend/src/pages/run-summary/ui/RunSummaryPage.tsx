@@ -6,14 +6,14 @@ import { getStoredLanguage } from '@/shared/lib/i18n';
 import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
 import { ErrorState, LoadingState } from '@/shared/ui/ResourceState';
 
-function ariaAssessment(score: number): string {
+function ariaAssessment(score: number, locale: 'en' | 'ru'): string {
   if (score >= 3000) {
-    return '// above expectations';
+    return locale === 'ru' ? '// выше ожиданий' : '// above expectations';
   }
   if (score >= 1300) {
-    return '// adequate';
+    return locale === 'ru' ? '// приемлемо' : '// adequate';
   }
-  return '// we need to talk';
+  return locale === 'ru' ? '// нам нужно поговорить' : '// we need to talk';
 }
 
 export function RunSummaryPage() {
@@ -102,8 +102,17 @@ export function RunSummaryPage() {
             <li>{locale === 'ru' ? 'Режим' : 'Mode'}: {runSummary.data.mode}</li>
             <li>{locale === 'ru' ? 'Сложность' : 'Difficulty'}: {runSummary.data.difficulty}</li>
             <li>{locale === 'ru' ? 'Счёт' : 'Score'}: {runSummary.data.score}</li>
-            <li>{locale === 'ru' ? 'Оценка ARIA' : 'ARIA assessment'}: {ariaAssessment(runSummary.data.score)}</li>
-            <li>{locale === 'ru' ? 'Валидация' : 'Validation'}: {runSummary.data.suspicious ? `Flagged (${runSummary.data.validationNotes ?? 'No notes'})` : locale === 'ru' ? 'Чисто' : 'Clean'}</li>
+            <li>{locale === 'ru' ? 'Оценка ARIA' : 'ARIA assessment'}: {ariaAssessment(runSummary.data.score, locale)}</li>
+            <li>
+              {locale === 'ru' ? 'Валидация' : 'Validation'}:{' '}
+              {runSummary.data.suspicious
+                ? locale === 'ru'
+                  ? `Помечено (${runSummary.data.validationNotes ?? 'без заметок'})`
+                  : `Flagged (${runSummary.data.validationNotes ?? 'No notes'})`
+                : locale === 'ru'
+                  ? 'Чисто'
+                  : 'Clean'}
+            </li>
           </ul>
           <p>
             <Link to="/play">{locale === 'ru' ? 'СЛЕДУЮЩАЯ СМЕНА' : 'NEXT SHIFT'}</Link> · <Link to="/codex">{locale === 'ru' ? 'АРХИВ' : 'ARCHIVE'}</Link> · <Link to="/leaderboards">{locale === 'ru' ? 'ЛИДЕРБОРД' : 'LEADERBOARD'}</Link>

@@ -64,8 +64,12 @@ export function SettingsPage() {
       {health.isLoading && <LoadingState label="backend health" />}
       {health.error && (
         <ErrorState
-          title="Backend unavailable"
-          message="Could not load API health status. Ensure backend is running on http://localhost:8080 and Vite dev proxy is active (or set VITE_API_BASE_URL)."
+          title={locale === 'ru' ? 'Backend недоступен' : 'Backend unavailable'}
+          message={
+            locale === 'ru'
+              ? 'Не удалось загрузить статус API health. Убедитесь, что backend запущен на http://localhost:8080 и активен Vite proxy (или задайте VITE_API_BASE_URL).'
+              : 'Could not load API health status. Ensure backend is running on http://localhost:8080 and Vite dev proxy is active (or set VITE_API_BASE_URL).'
+          }
         />
       )}
 
@@ -73,9 +77,9 @@ export function SettingsPage() {
         <div className="panel">
           <h3>{locale === 'ru' ? 'Статус backend' : 'Backend status'}</h3>
           <ul>
-            <li>Service: {health.data.service}</li>
-            <li>Status: {health.data.status}</li>
-            <li>Timestamp: {new Date(health.data.timestamp).toLocaleString()}</li>
+            <li>{locale === 'ru' ? 'Сервис' : 'Service'}: {health.data.service}</li>
+            <li>{locale === 'ru' ? 'Статус' : 'Status'}: {health.data.status}</li>
+            <li>{locale === 'ru' ? 'Время' : 'Timestamp'}: {new Date(health.data.timestamp).toLocaleString()}</li>
           </ul>
         </div>
       )}

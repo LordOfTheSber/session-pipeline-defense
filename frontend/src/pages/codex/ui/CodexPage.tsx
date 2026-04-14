@@ -45,7 +45,7 @@ export function CodexPage() {
 
       <div className="card-grid">
         <article className="menu-card">
-          <h3>Division</h3>
+          <h3>{locale === 'ru' ? 'Подразделение' : 'Division'}</h3>
           <p>{loreCodex.division}</p>
         </article>
         <article className="menu-card">
@@ -57,11 +57,11 @@ export function CodexPage() {
           <p>{loreCodex.aria}</p>
         </article>
         <article className="menu-card">
-          <h3>Operator-7</h3>
+          <h3>{locale === 'ru' ? 'Оператор-7' : 'Operator-7'}</h3>
           <p>{loreCodex.operator7}</p>
         </article>
         <article className="menu-card">
-          <h3>Pipeline</h3>
+          <h3>{locale === 'ru' ? 'Пайплайн' : 'Pipeline'}</h3>
           <p>{loreCodex.pipeline}</p>
         </article>
         <article className="menu-card">

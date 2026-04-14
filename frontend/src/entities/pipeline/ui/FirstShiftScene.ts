@@ -272,7 +272,9 @@ export class FirstShiftScene extends Phaser.Scene {
   private updateHud() {
     const ttlLeft = Math.max(0, Math.ceil(this.sessionTtl));
     this.metrics?.setText(
-      `INTEGRITY ${this.integrity}% | COMPUTE ${Math.floor(this.credits)} ¢ | SURGE CYCLE 01 | TTL ${ttlLeft}s | SHIFT ${Math.floor(this.elapsedSeconds)}s`,
+      this.locale === 'ru'
+        ? `ЦЕЛОСТНОСТЬ ${this.integrity}% | КОМПЬЮТ ${Math.floor(this.credits)} ¢ | ЦИКЛ SURGE 01 | TTL ${ttlLeft}с | СМЕНА ${Math.floor(this.elapsedSeconds)}с`
+        : `INTEGRITY ${this.integrity}% | COMPUTE ${Math.floor(this.credits)} ¢ | SURGE CYCLE 01 | TTL ${ttlLeft}s | SHIFT ${Math.floor(this.elapsedSeconds)}s`,
     );
 
     this.instruction?.setText(

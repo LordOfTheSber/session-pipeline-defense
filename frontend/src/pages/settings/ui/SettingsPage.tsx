@@ -12,6 +12,7 @@ import {
   setStoredDifficulty,
   setStoredNickname,
 } from '@/shared/lib/profilePrefs';
+import { getStoredLanguage, setStoredLanguage, t, type Locale } from '@/shared/lib/i18n';
 import type { Difficulty } from '@/shared/types/api';
 import { ErrorState, LoadingState } from '@/shared/ui/ResourceState';
 
@@ -22,6 +23,8 @@ export function SettingsPage() {
   const [difficulty, setDifficulty] = useState<Difficulty>(getStoredDifficulty());
   const [audioPrefs, setAudioPrefs] = useState(getConsoleAudioPrefs());
   const [consolePrefs, setConsolePrefs] = useState(getConsolePreferences());
+  const [language, setLanguage] = useState<Locale>(getStoredLanguage());
+  const locale = language;
   const [status, setStatus] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -32,7 +35,7 @@ export function SettingsPage() {
 
     const normalizedNickname = nickname.trim();
     if (normalizedNickname.length < 2) {
-      setSaveError('Nickname should have at least 2 characters.');
+      setSaveError(locale === 'ru' ? 'Никнейм должен содержать минимум 2 символа.' : 'Nickname should have at least 2 characters.');
       return;
     }
 
@@ -42,50 +45,65 @@ export function SettingsPage() {
       setStoredDifficulty(profile.preferredDifficulty);
       setConsoleAudioPrefs(audioPrefs);
       setConsolePreferences(consolePrefs);
-      setStatus(`Saved console preferences for ${profile.nickname}.`);
+      setStoredLanguage(language);
+      setStatus(locale === 'ru' ? `Настройки сохранены для ${profile.nickname}.` : `Saved console preferences for ${profile.nickname}.`);
     } catch {
-      setSaveError('Could not persist profile preferences to backend.');
+      setSaveError(locale === 'ru' ? 'Не удалось сохранить настройки профиля в backend.' : 'Could not persist profile preferences to backend.');
     }
   };
 
   return (
     <section>
-      <h2>CONSOLE PREFERENCES</h2>
-      <p>Persist nickname, default difficulty, ARIA behavior, and accessibility toggles.</p>
+      <h2>{locale === 'ru' ? 'НАСТРОЙКИ КОНСОЛИ' : 'CONSOLE PREFERENCES'}</h2>
+      <p>
+        {locale === 'ru'
+          ? 'Сохраните никнейм, сложность по умолчанию, поведение ARIA и параметры доступности.'
+          : 'Persist nickname, default difficulty, ARIA behavior, and accessibility toggles.'}
+      </p>
 
       {health.isLoading && <LoadingState label="backend health" />}
       {health.error && (
         <ErrorState
-          title="Backend unavailable"
-          message="Could not load API health status. Ensure backend is running on http://localhost:8080 and Vite dev proxy is active (or set VITE_API_BASE_URL)."
+          title={locale === 'ru' ? 'Backend недоступен' : 'Backend unavailable'}
+          message={
+            locale === 'ru'
+              ? 'Не удалось загрузить статус API health. Убедитесь, что backend запущен на http://localhost:8080 и активен Vite proxy (или задайте VITE_API_BASE_URL).'
+              : 'Could not load API health status. Ensure backend is running on http://localhost:8080 and Vite dev proxy is active (or set VITE_API_BASE_URL).'
+          }
         />
       )}
 
       {health.data && (
         <div className="panel">
-          <h3>Backend status</h3>
+          <h3>{locale === 'ru' ? 'Статус backend' : 'Backend status'}</h3>
           <ul>
-            <li>Service: {health.data.service}</li>
-            <li>Status: {health.data.status}</li>
-            <li>Timestamp: {new Date(health.data.timestamp).toLocaleString()}</li>
+            <li>{locale === 'ru' ? 'Сервис' : 'Service'}: {health.data.service}</li>
+            <li>{locale === 'ru' ? 'Статус' : 'Status'}: {health.data.status}</li>
+            <li>{locale === 'ru' ? 'Время' : 'Timestamp'}: {new Date(health.data.timestamp).toLocaleString()}</li>
           </ul>
         </div>
       )}
 
       <form className="panel settings-form" onSubmit={onSave}>
-        <h3>Operator Profile</h3>
-        <label htmlFor="nickname">Nickname</label>
+        <h3>{locale === 'ru' ? 'Профиль оператора' : 'Operator Profile'}</h3>
+        <label htmlFor="nickname">{locale === 'ru' ? 'Никнейм' : 'Nickname'}</label>
         <input id="nickname" value={nickname} maxLength={50} onChange={(event) => setNickname(event.target.value)} />
 
-        <label htmlFor="difficulty">Preferred Difficulty</label>
+        <label htmlFor="difficulty">{locale === 'ru' ? 'Предпочитаемая сложность' : 'Preferred Difficulty'}</label>
         <select id="difficulty" value={difficulty} onChange={(event) => setDifficulty(event.target.value as Difficulty)}>
           <option value="STANDARD">STANDARD</option>
           <option value="HARDENED">HARDENED</option>
           <option value="NIGHTMARE">NIGHTMARE</option>
         </select>
 
-        <h3>ARIA Channel</h3>
-        <label htmlFor="verbosity">ARIA verbosity</label>
+        <label htmlFor="language">{t(locale, 'language')}</label>
+        <select id="language" value={language} onChange={(event) => setLanguage(event.target.value as Locale)}>
+          <option value="en">{t(locale, 'english')}</option>
+          <option value="ru">{t(locale, 'russian')}</option>
+        </select>
+
+        <h3>{locale === 'ru' ? 'Канал ARIA' : 'ARIA Channel'}</h3>
+        <label htmlFor="verbosity">{locale === 'ru' ? 'Подробность ARIA' : 'ARIA verbosity'}</label>
         <select
           id="verbosity"
           value={consolePrefs.ariaVerbosity}
@@ -102,7 +120,7 @@ export function SettingsPage() {
             checked={consolePrefs.crtEffectEnabled}
             onChange={(event) => setConsolePrefs((prev) => ({ ...prev, crtEffectEnabled: event.target.checked }))}
           />{' '}
-          CRT effect
+          {locale === 'ru' ? 'CRT-эффект' : 'CRT effect'}
         </label>
 
         <label>
@@ -111,11 +129,11 @@ export function SettingsPage() {
             checked={consolePrefs.reducedMotion}
             onChange={(event) => setConsolePrefs((prev) => ({ ...prev, reducedMotion: event.target.checked }))}
           />{' '}
-          Reduced motion
+          {locale === 'ru' ? 'Уменьшенное движение' : 'Reduced motion'}
         </label>
 
-        <h3>Console Audio Mix</h3>
-        <label htmlFor="uiVolume">UI clicks: {audioPrefs.uiVolume}%</label>
+        <h3>{locale === 'ru' ? 'Микширование аудио консоли' : 'Console Audio Mix'}</h3>
+        <label htmlFor="uiVolume">{locale === 'ru' ? 'Клики UI' : 'UI clicks'}: {audioPrefs.uiVolume}%</label>
         <input
           id="uiVolume"
           type="range"
@@ -125,7 +143,7 @@ export function SettingsPage() {
           onChange={(event) => setAudioPrefs((prev) => ({ ...prev, uiVolume: Number(event.target.value) }))}
         />
 
-        <label htmlFor="ambienceVolume">Data-center hum: {audioPrefs.ambienceVolume}%</label>
+        <label htmlFor="ambienceVolume">{locale === 'ru' ? 'Фон дата-центра' : 'Data-center hum'}: {audioPrefs.ambienceVolume}%</label>
         <input
           id="ambienceVolume"
           type="range"
@@ -135,7 +153,7 @@ export function SettingsPage() {
           onChange={(event) => setAudioPrefs((prev) => ({ ...prev, ambienceVolume: Number(event.target.value) }))}
         />
 
-        <label htmlFor="ariaBeepVolume">ARIA voice beep: {audioPrefs.ariaBeepVolume}%</label>
+        <label htmlFor="ariaBeepVolume">{locale === 'ru' ? 'Сигнал голоса ARIA' : 'ARIA voice beep'}: {audioPrefs.ariaBeepVolume}%</label>
         <input
           id="ariaBeepVolume"
           type="range"
@@ -145,7 +163,7 @@ export function SettingsPage() {
           onChange={(event) => setAudioPrefs((prev) => ({ ...prev, ariaBeepVolume: Number(event.target.value) }))}
         />
 
-        <button type="submit">Save Preferences</button>
+        <button type="submit">{t(locale, 'savePreferences')}</button>
         {status && <p>{status}</p>}
         {saveError && <p>{saveError}</p>}
       </form>

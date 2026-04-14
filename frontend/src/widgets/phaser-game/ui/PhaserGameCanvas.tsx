@@ -29,5 +29,9 @@ export function PhaserGameCanvas({ runOptions }: PhaserGameCanvasProps) {
     };
   }, [runOptions]);
 
-  return <div ref={containerRef} className="phaser-host" />;
+  return (
+    <div className="phaser-scroll-wrap">
+      <div ref={containerRef} className="phaser-host" />
+    </div>
+  );
 }

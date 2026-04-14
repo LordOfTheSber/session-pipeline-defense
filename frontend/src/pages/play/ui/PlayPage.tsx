@@ -63,6 +63,22 @@ function renderIntegrityBar(percent: number): string {
   return `${'█'.repeat(filled)}${'░'.repeat(10 - filled)}`;
 }
 
+function localizeSessionLabel(label: string, locale: 'en' | 'ru'): string {
+  if (locale !== 'ru') {
+    return label;
+  }
+  if (label === 'Light Session') {
+    return 'Лёгкая сессия';
+  }
+  if (label === 'Batch Session') {
+    return 'Пакетная сессия';
+  }
+  if (label === 'Validator Session') {
+    return 'Валидатор';
+  }
+  return label;
+}
+
 export function PlayPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -187,7 +203,7 @@ export function PlayPage() {
           setSubmitError(`Run submission failed: ${error.message}${detailText}`);
           return;
         }
-        setSubmitError('Run submission failed. Backend may be unavailable.');
+        setSubmitError(locale === 'ru' ? 'Не удалось отправить результат. Возможно, backend недоступен.' : 'Run submission failed. Backend may be unavailable.');
       }
     };
 
@@ -227,7 +243,7 @@ export function PlayPage() {
       window.removeEventListener(ARIA_LINE_EVENT, onScriptedLine);
       window.removeEventListener(HUD_UPDATE_EVENT, onHudUpdate);
     };
-  }, [dailyChallenge.data, markDailyLogSeen, nickname]);
+  }, [dailyChallenge.data, locale, markDailyLogSeen, nickname]);
 
   const onSkipFirstShift = () => {
     const confirmed = window.confirm('// ARIA: понял, ты уже бывал здесь. Пропустить первую смену?');
@@ -263,7 +279,7 @@ export function PlayPage() {
           <div>SURGE CYCLE {String(hud?.wave ?? 1).padStart(2, '0')}</div>
           <div>THROUGHPUT {hud?.processed ?? 0}</div>
           <div>SHIFT {hud?.timeSeconds ?? 0}s</div>
-          <div>SESSION PROFILE {hud?.selectedSessionLabel ?? 'Light Session'}</div>
+          <div>{locale === 'ru' ? 'ПРОФИЛЬ СЕССИИ' : 'SESSION PROFILE'} {localizeSessionLabel(hud?.selectedSessionLabel ?? 'Light Session', locale)}</div>
         </div>
       </div>
 
@@ -282,11 +298,15 @@ export function PlayPage() {
         </div>
       )}
 
-      {mode === 'DAILY' && dailyChallenge.isLoading && <LoadingState label="daily challenge seed" />}
+      {mode === 'DAILY' && dailyChallenge.isLoading && <LoadingState label={locale === 'ru' ? 'сид ежедневного испытания' : 'daily challenge seed'} />}
       {mode === 'DAILY' && dailyChallenge.error && (
         <ErrorState
-          title="Daily challenge unavailable"
-          message="Could not load today's deterministic challenge from /api/challenges/daily. Please retry or play Endless mode."
+          title={locale === 'ru' ? 'Ежедневное испытание недоступно' : 'Daily challenge unavailable'}
+          message={
+            locale === 'ru'
+              ? 'Не удалось загрузить детерминированный daily challenge из /api/challenges/daily. Повторите попытку или запустите бесконечный режим.'
+              : "Could not load today's deterministic challenge from /api/challenges/daily. Please retry or play Endless mode."
+          }
         />
       )}
       {mode === 'DAILY' && dailyChallenge.data && (
@@ -295,7 +315,8 @@ export function PlayPage() {
           <p className="muted">{dailyChallenge.data.actReference}</p>
           <p>{dailyChallenge.data.logExcerpt}</p>
           <p>
-            Seed <code>{dailyChallenge.data.seed}</code> · leaderboard window <code>{dailyChallenge.data.leaderboardWindowKey}</code>
+            {locale === 'ru' ? 'Сид' : 'Seed'} <code>{dailyChallenge.data.seed}</code> · {locale === 'ru' ? 'окно лидерборда' : 'leaderboard window'}{' '}
+            <code>{dailyChallenge.data.leaderboardWindowKey}</code>
           </p>
           {!dailyStarted && (
             <button type="button" onClick={() => setDailyStarted(true)}>
@@ -313,8 +334,9 @@ export function PlayPage() {
         <div className="panel panel-accent">
           <h3>{locale === 'ru' ? 'БРИФИНГ СМЕНЫ ЗАВЕРШЁН' : 'SHIFT BRIEFING COMPLETE'}</h3>
           <p>
-            Callsign acknowledged for <strong>{nickname}</strong>. Endless and Daily queues are unlocked. First Codex fragment is now
-            available.
+            {locale === 'ru'
+              ? <>Позывной подтверждён для <strong>{nickname}</strong>. Открыты очереди Endless и Daily. Первый фрагмент кодекса уже доступен.</>
+              : <>Callsign acknowledged for <strong>{nickname}</strong>. Endless and Daily queues are unlocked. First Codex fragment is now available.</>}
           </p>
           <p>
             <button type="button" onClick={() => navigate('/codex')}>
@@ -331,22 +353,28 @@ export function PlayPage() {
         <div className="panel">
           <h3>{locale === 'ru' ? 'Результат последней смены' : 'Latest Shift Outcome'}</h3>
           <ul>
-            <li>Mode: {summary.mode}</li>
-            <li>Difficulty: {summary.difficulty}</li>
-            <li>Score: {summary.score}</li>
-            <li>Processed Data: {summary.processedCount}</li>
-            <li>Wave Reached: {summary.waveReached}</li>
-            <li>Survival Time: {summary.survivalSeconds}s</li>
-            <li>Credits Spent: {summary.creditsSpent}</li>
-            <li>Peak Active Sessions: {summary.activeSessionPeak}</li>
-            <li>Health at End: {summary.systemHealthEnd}</li>
+            <li>{locale === 'ru' ? 'Режим' : 'Mode'}: {summary.mode}</li>
+            <li>{locale === 'ru' ? 'Сложность' : 'Difficulty'}: {summary.difficulty}</li>
+            <li>{locale === 'ru' ? 'Счёт' : 'Score'}: {summary.score}</li>
+            <li>{locale === 'ru' ? 'Обработано данных' : 'Processed Data'}: {summary.processedCount}</li>
+            <li>{locale === 'ru' ? 'Достигнутая волна' : 'Wave Reached'}: {summary.waveReached}</li>
+            <li>{locale === 'ru' ? 'Время выживания' : 'Survival Time'}: {summary.survivalSeconds}s</li>
+            <li>{locale === 'ru' ? 'Потрачено кредитов' : 'Credits Spent'}: {summary.creditsSpent}</li>
+            <li>{locale === 'ru' ? 'Пик активных сессий' : 'Peak Active Sessions'}: {summary.activeSessionPeak}</li>
+            <li>{locale === 'ru' ? 'Здоровье в конце' : 'Health at End'}: {summary.systemHealthEnd}</li>
           </ul>
 
           {submittedRun && (
             <p>
-              Persisted run <code>{submittedRun.id}</code>
-              {submittedRun.suspicious ? ` (flagged: ${submittedRun.validationNotes ?? 'no notes'})` : ' (validation clean)'}.
-              Visit Run Summary with <code>?runId={submittedRun.id}</code>.
+              {locale === 'ru' ? 'Сохранённый ран' : 'Persisted run'} <code>{submittedRun.id}</code>
+              {submittedRun.suspicious
+                ? locale === 'ru'
+                  ? ` (помечен: ${submittedRun.validationNotes ?? 'без заметок'})`
+                  : ` (flagged: ${submittedRun.validationNotes ?? 'no notes'})`
+                : locale === 'ru'
+                  ? ' (проверка пройдена)'
+                  : ' (validation clean)'}
+              . {locale === 'ru' ? 'Откройте отчёт через' : 'Visit Run Summary with'} <code>?runId={submittedRun.id}</code>.
             </p>
           )}
 
@@ -354,8 +382,14 @@ export function PlayPage() {
         </div>
       )}
 
-      {narrativeState.isLoading && <LoadingState label="narrative state" />}
-      {narrativeState.error && <p className="muted">Narrative progression service unavailable; onboarding state may not persist.</p>}
+      {narrativeState.isLoading && <LoadingState label={locale === 'ru' ? 'состояние сюжета' : 'narrative state'} />}
+      {narrativeState.error && (
+        <p className="muted">
+          {locale === 'ru'
+            ? 'Сервис сюжетного прогресса недоступен; состояние обучения может не сохраниться.'
+            : 'Narrative progression service unavailable; onboarding state may not persist.'}
+        </p>
+      )}
     </section>
   );
 }

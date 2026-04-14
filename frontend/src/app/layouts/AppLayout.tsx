@@ -9,7 +9,7 @@ export function AppLayout() {
     { to: '/leaderboards', label: locale === 'ru' ? 'Рейтинг' : 'Leaderboards' },
     { to: '/run-summary', label: locale === 'ru' ? 'Отчёт' : 'Run Summary' },
     { to: '/run-history', label: locale === 'ru' ? 'История' : 'Run History' },
-    { to: '/codex', label: 'Codex' },
+    { to: '/codex', label: locale === 'ru' ? 'Кодекс' : 'Codex' },
     { to: '/settings', label: locale === 'ru' ? 'Настройки' : 'Settings' },
   ];
 

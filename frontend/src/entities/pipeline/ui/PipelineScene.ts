@@ -485,7 +485,8 @@ export class PipelineScene extends Phaser.Scene {
       fontSize: '10px',
       color: '#bfdbfe',
     });
-    const capText = this.add.text(x - 20, y + 18, `cap ${spec.capacity}`, {
+    const capPrefix = this.runOptions.locale === 'ru' ? 'ёмк.' : 'cap';
+    const capText = this.add.text(x - 20, y + 18, `${capPrefix} ${spec.capacity}`, {
       fontFamily: 'monospace',
       fontSize: '10px',
       color: '#bbf7d0',
@@ -514,7 +515,8 @@ export class PipelineScene extends Phaser.Scene {
       const ttlRatio = Phaser.Math.Clamp(session.ttlSeconds / spec.ttlSeconds, 0, 1);
       session.sprite.setAlpha(0.5 + ttlRatio * 0.5);
       session.ttlText.setText(`${Math.max(0, Math.ceil(session.ttlSeconds))}s`);
-      session.capText.setText(`cap ${Math.max(0, spec.capacity - session.processedCount)}`);
+      const capPrefix = this.runOptions.locale === 'ru' ? 'ёмк.' : 'cap';
+      session.capText.setText(`${capPrefix} ${Math.max(0, spec.capacity - session.processedCount)}`);
 
       if (session.fireCooldown <= 0) {
         const target = this.findFrontmostPacketInLane(session.lane);

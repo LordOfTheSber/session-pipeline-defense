@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { getStoredLanguage } from '@/shared/lib/i18n';
 import {
   HUD_UPDATE_EVENT,
   PIPELINE_EVENT,
@@ -17,6 +18,7 @@ const PACKET_SPEED = 52;
 const CORRUPTED_SPEED = 64;
 
 export class FirstShiftScene extends Phaser.Scene {
+  private locale: 'en' | 'ru' = 'en';
   private credits = 45;
 
   private integrity = 100;
@@ -50,9 +52,20 @@ export class FirstShiftScene extends Phaser.Scene {
   }
 
   create() {
+    this.locale = getStoredLanguage();
     this.drawConsole();
-    this.emitAria('run.start', 'Operator-7, first shift protocol. Click the highlighted slot to deploy Light Session.');
-    this.emitAria('wave.start', 'We run one controlled cycle. Observe TTL, Capacity and Integrity.');
+    this.emitAria(
+      'run.start',
+      this.locale === 'ru'
+        ? 'Оператор-7, протокол первой смены. Кликните на выделенный слот, чтобы разместить лёгкую сессию.'
+        : 'Operator-7, first shift protocol. Click the highlighted slot to deploy Light Session.',
+    );
+    this.emitAria(
+      'wave.start',
+      this.locale === 'ru'
+        ? 'Запускаем один контролируемый цикл. Следите за TTL, ёмкостью и целостностью.'
+        : 'We run one controlled cycle. Observe TTL, Capacity and Integrity.',
+    );
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (this.isComplete) {
@@ -63,7 +76,10 @@ export class FirstShiftScene extends Phaser.Scene {
         this.placeLightSession();
       } else if (this.waitingForValidator && pointer.x > 220 && pointer.x < 340 && pointer.y > 200 && pointer.y < 300) {
         this.waitingForValidator = false;
-        this.emitAria('session.placed', 'Validator Session online. Corrupted signatures are now manageable.');
+        this.emitAria(
+          'session.placed',
+          this.locale === 'ru' ? 'Сессия Validator активна. Повреждённые сигнатуры теперь под контролем.' : 'Validator Session online. Corrupted signatures are now manageable.',
+        );
         this.corruptedHandled = true;
       }
     });
@@ -83,7 +99,10 @@ export class FirstShiftScene extends Phaser.Scene {
     if (this.sessionPlaced && this.sessionTtl > 0) {
       this.sessionTtl -= dt;
       if (this.sessionTtl <= 0) {
-        this.emitAria('session.expired', 'Light Session expired on TTL. Sessions are temporary by design.');
+        this.emitAria(
+          'session.expired',
+          this.locale === 'ru' ? 'Лёгкая сессия истекла по TTL. Сессии по задумке временные.' : 'Light Session expired on TTL. Sessions are temporary by design.',
+        );
         this.sessionSprite?.setAlpha(0.25);
         this.spawnCorruptedPacket();
       }
@@ -95,7 +114,10 @@ export class FirstShiftScene extends Phaser.Scene {
       if (this.packet.x <= TARGET_X) {
         if (this.packetType === 'CORRUPTED' && !this.corruptedHandled) {
           this.integrity = 1;
-          this.emitAria('health.critical', '// rerouting… Integrity floor engaged. Training shift cannot fail.');
+          this.emitAria(
+            'health.critical',
+            this.locale === 'ru' ? '// rerouting… Активирован порог целостности. Тренировочная смена не может быть провалена.' : '// rerouting… Integrity floor engaged. Training shift cannot fail.',
+          );
           this.packet.destroy();
           this.packet = undefined;
           this.finishShift();
@@ -105,12 +127,18 @@ export class FirstShiftScene extends Phaser.Scene {
           this.packet = undefined;
 
           if (this.packetType === 'PACKET') {
-            this.emitAria('session.placed', 'Packet processed. Credits recycle back into compute budget.');
+            this.emitAria(
+              'session.placed',
+              this.locale === 'ru' ? 'Пакет обработан. Кредиты возвращены в вычислительный бюджет.' : 'Packet processed. Credits recycle back into compute budget.',
+            );
             if (this.sessionTtl <= 0) {
               this.spawnCorruptedPacket();
             }
           } else {
-            this.emitAria('session.placed', 'Corrupted Data neutralized. You are cleared for live shifts.');
+            this.emitAria(
+              'session.placed',
+              this.locale === 'ru' ? 'Повреждённые данные нейтрализованы. Допуск к рабочим сменам подтверждён.' : 'Corrupted Data neutralized. You are cleared for live shifts.',
+            );
             this.finishShift();
           }
         }
@@ -124,26 +152,26 @@ export class FirstShiftScene extends Phaser.Scene {
     this.add.rectangle(450, 260, 900, 520, 0x03101b, 1);
     this.add.rectangle(450, 260, 870, 470, 0x081a27, 0.65).setStrokeStyle(1, 0x22d3ee, 0.5);
 
-    this.add.text(32, 34, 'DIVISION TERMINAL // FIRST SHIFT', {
+    this.add.text(32, 34, this.locale === 'ru' ? 'ТЕРМИНАЛ DIVISION // ПЕРВАЯ СМЕНА' : 'DIVISION TERMINAL // FIRST SHIFT', {
       fontFamily: 'JetBrains Mono, monospace',
       fontSize: '20px',
       color: '#67e8f9',
     });
 
     this.add.rectangle(SESSION_X, SESSION_Y, 62, 62, 0x0f172a, 0.4).setStrokeStyle(2, 0x67e8f9, 0.8);
-    this.add.text(236, 300, 'Deploy Slot A1', {
+    this.add.text(236, 300, this.locale === 'ru' ? 'Слот размещения A1' : 'Deploy Slot A1', {
       fontFamily: 'JetBrains Mono, monospace',
       fontSize: '12px',
       color: '#a5f3fc',
     });
 
     this.add.rectangle(450, LANE_Y, 720, 64, 0x0f172a, 0.35).setStrokeStyle(1, 0x164e63, 0.85);
-    this.add.text(96, LANE_Y - 45, 'OVERLOAD BOUNDARY', {
+    this.add.text(96, LANE_Y - 45, this.locale === 'ru' ? 'ГРАНИЦА ПЕРЕГРУЗКИ' : 'OVERLOAD BOUNDARY', {
       fontFamily: 'JetBrains Mono, monospace',
       fontSize: '11px',
       color: '#fca5a5',
     });
-    this.add.text(730, LANE_Y - 45, 'DATA INGRESS', {
+    this.add.text(730, LANE_Y - 45, this.locale === 'ru' ? 'ВХОД ДАННЫХ' : 'DATA INGRESS', {
       fontFamily: 'JetBrains Mono, monospace',
       fontSize: '11px',
       color: '#fbcfe8',
@@ -167,14 +195,14 @@ export class FirstShiftScene extends Phaser.Scene {
     this.sessionPlaced = true;
     this.sessionSprite = this.add.rectangle(SESSION_X, SESSION_Y, 42, 42, 0x38bdf8, 1).setStrokeStyle(2, 0x0c4a6e);
     this.credits -= 25;
-    this.emitAria('session.placed', 'Light Session deployed. Fast cadence, short life.');
+    this.emitAria('session.placed', this.locale === 'ru' ? 'Лёгкая сессия размещена. Быстрая работа, короткий срок жизни.' : 'Light Session deployed. Fast cadence, short life.');
     this.spawnPacket();
   }
 
   private spawnPacket() {
     this.packetType = 'PACKET';
     this.packet = this.add.rectangle(START_X, LANE_Y, 30, 30, 0xfb7185, 1).setStrokeStyle(2, 0x7f1d1d);
-    this.emitAria('wave.start', 'Incoming Packet. Watch auto-processing on lane contact.');
+    this.emitAria('wave.start', this.locale === 'ru' ? 'Входящий пакет. Наблюдайте автообработку на линии.' : 'Incoming Packet. Watch auto-processing on lane contact.');
   }
 
   private spawnCorruptedPacket() {
@@ -185,7 +213,7 @@ export class FirstShiftScene extends Phaser.Scene {
     this.packetType = 'CORRUPTED';
     this.packet = this.add.rectangle(START_X, LANE_Y, 34, 34, 0xef4444, 1).setStrokeStyle(2, 0x7f1d1d);
     this.waitingForValidator = true;
-    this.emitAria('data.corrupted', 'Corrupted Data detected. Deploy Validator or prepare reroute.');
+    this.emitAria('data.corrupted', this.locale === 'ru' ? 'Обнаружены повреждённые данные. Разместите Validator или готовьте перенаправление.' : 'Corrupted Data detected. Deploy Validator or prepare reroute.');
   }
 
   private finishShift() {
@@ -194,11 +222,11 @@ export class FirstShiftScene extends Phaser.Scene {
     }
 
     this.isComplete = true;
-    this.emitAria('run.start', 'First shift complete. Debrief unlocked, Endless and Daily access granted.');
+    this.emitAria('run.start', this.locale === 'ru' ? 'Первая смена завершена. Дебриф открыт, доступ к Endless и Daily получен.' : 'First shift complete. Debrief unlocked, Endless and Daily access granted.');
 
     this.add.rectangle(450, 258, 680, 220, 0x020617, 0.92).setStrokeStyle(2, 0x67e8f9).setDepth(20);
     this.add
-      .text(450, 190, 'SHIFT BRIEFING', {
+      .text(450, 190, this.locale === 'ru' ? 'БРИФИНГ СМЕНЫ' : 'SHIFT BRIEFING', {
         fontFamily: 'JetBrains Mono, monospace',
         fontSize: '30px',
         color: '#67e8f9',
@@ -207,7 +235,7 @@ export class FirstShiftScene extends Phaser.Scene {
       .setDepth(21);
 
     this.add
-      .text(450, 248, 'Operator callsign granted. Codex entry decrypted: Shift Zero Echo.', {
+      .text(450, 248, this.locale === 'ru' ? 'Позывной оператора выдан. Запись кодекса расшифрована: Shift Zero Echo.' : 'Operator callsign granted. Codex entry decrypted: Shift Zero Echo.', {
         fontFamily: 'JetBrains Mono, monospace',
         fontSize: '15px',
         color: '#cbd5e1',
@@ -216,7 +244,7 @@ export class FirstShiftScene extends Phaser.Scene {
       .setDepth(21);
 
     this.add
-      .text(450, 288, 'Return to terminal to begin Endless or Daily reconstruction.', {
+      .text(450, 288, this.locale === 'ru' ? 'Вернитесь в терминал, чтобы начать Endless или Daily реконструкцию.' : 'Return to terminal to begin Endless or Daily reconstruction.', {
         fontFamily: 'JetBrains Mono, monospace',
         fontSize: '13px',
         color: '#a5f3fc',
@@ -249,8 +277,12 @@ export class FirstShiftScene extends Phaser.Scene {
 
     this.instruction?.setText(
       this.waitingForValidator
-        ? 'Click deploy slot again to bring Validator Session online before Corrupted Data reaches boundary.'
-        : 'Follow ARIA prompts. This shift cannot fail; it demonstrates pipeline fundamentals in live flow.',
+        ? this.locale === 'ru'
+          ? 'Нажмите на слот размещения ещё раз, чтобы активировать Validator до достижения границы.'
+          : 'Click deploy slot again to bring Validator Session online before Corrupted Data reaches boundary.'
+        : this.locale === 'ru'
+          ? 'Следуйте подсказкам ARIA. Эта смена не может быть провалена: она показывает основы пайплайна.'
+          : 'Follow ARIA prompts. This shift cannot fail; it demonstrates pipeline fundamentals in live flow.',
     );
 
     window.dispatchEvent(

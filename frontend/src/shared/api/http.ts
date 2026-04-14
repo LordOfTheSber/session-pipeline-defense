@@ -1,3 +1,4 @@
+import { getAuthToken } from '@/shared/lib/auth';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 const DEV_DEDUP_TTL_MS = 1200;
 const inflightGetRequests = new Map<string, Promise<unknown>>();
@@ -36,9 +37,11 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
   }
 
   const request = (async () => {
+    const token = getAuthToken();
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(init?.headers ?? {}),
       },
       ...init,

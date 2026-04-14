@@ -90,3 +90,23 @@ export interface NarrativeSeenRequest {
   nickname: string;
   beatKey: string;
 }
+
+
+export interface AuthRegisterRequest {
+  nickname: string;
+  email: string;
+  password: string;
+  preferredDifficulty: Difficulty;
+}
+
+export interface AuthLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  tokenType: string;
+  expiresInSeconds: number;
+  profile: PlayerProfile;
+}

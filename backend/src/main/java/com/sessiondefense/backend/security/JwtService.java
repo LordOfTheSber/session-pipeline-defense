@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
@@ -46,14 +47,21 @@ public class JwtService {
     }
 
     private SecretKey signingKey() {
-        String secret = jwtProperties.secret();
-        byte[] keyBytes;
-        try {
-            keyBytes = Decoders.BASE64.decode(secret);
-        } catch (IllegalArgumentException ignored) {
-            keyBytes = secret.getBytes();
-        }
+        String rawSecret = jwtProperties.secret() == null ? "" : jwtProperties.secret().trim();
+        byte[] keyBytes = decodeSecret(rawSecret);
         return Keys.hmacShaKeyFor(normalizeToMinLength(keyBytes));
+    }
+
+    private byte[] decodeSecret(String secret) {
+        if (secret.isEmpty()) {
+            return "session-defense-secret".getBytes(StandardCharsets.UTF_8);
+        }
+
+        try {
+            return Decoders.BASE64.decode(secret);
+        } catch (RuntimeException ignored) {
+            return secret.getBytes(StandardCharsets.UTF_8);
+        }
     }
 
     private byte[] normalizeToMinLength(byte[] keyBytes) {

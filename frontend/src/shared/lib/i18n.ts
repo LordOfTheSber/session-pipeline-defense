@@ -38,7 +38,12 @@ const translations = {
 } as const;
 
 export function getStoredLanguage(): Locale {
-  return localStorage.getItem(LANGUAGE_KEY) === 'ru' ? 'ru' : 'en';
+  const stored = localStorage.getItem(LANGUAGE_KEY);
+  if (stored === 'en' || stored === 'ru') {
+    return stored;
+  }
+
+  return 'ru';
 }
 
 export function setStoredLanguage(locale: Locale): void {

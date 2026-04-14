@@ -7,6 +7,7 @@ import { RunHistoryPage } from '../../../pages/run-history/ui/RunHistoryPage';
 import { RunSummaryPage } from '../../../pages/run-summary/ui/RunSummaryPage';
 import { SettingsPage } from '../../../pages/settings/ui/SettingsPage';
 import { CodexPage } from '../../../pages/codex/ui/CodexPage';
+import { AuthPage } from '../../../pages/auth/ui/AuthPage';
 
 export function AppRouter() {
   return (
@@ -19,6 +20,7 @@ export function AppRouter() {
         <Route path="/run-history" element={<RunHistoryPage />} />
         <Route path="/codex" element={<CodexPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

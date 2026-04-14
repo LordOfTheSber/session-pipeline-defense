@@ -1,11 +1,14 @@
 package com.sessiondefense.backend.controller;
 
 import com.sessiondefense.backend.dto.ApiErrorResponse;
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,6 +27,27 @@ public class ApiExceptionHandler {
                 "NOT_FOUND",
                 exception.getMessage(),
                 List.of("Requested resource does not exist.")
+        );
+    }
+
+
+    @ExceptionHandler(EntityExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleEntityExists(EntityExistsException exception) {
+        return error(
+                "CONFLICT",
+                exception.getMessage(),
+                List.of("Resource with provided unique field already exists.")
+        );
+    }
+
+    @ExceptionHandler({BadCredentialsException.class, AuthenticationException.class})
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiErrorResponse handleAuthenticationFailure(RuntimeException exception) {
+        return error(
+                "UNAUTHORIZED",
+                exception.getMessage(),
+                List.of("Authentication failed.")
         );
     }
 

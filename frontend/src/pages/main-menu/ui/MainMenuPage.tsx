@@ -50,6 +50,11 @@ export function MainMenuPage() {
           <h3>{locale === 'ru' ? 'НАСТРОЙКИ' : 'PREFERENCES'}</h3>
           <p>{locale === 'ru' ? 'Параметры консоли, никнейм, доступность и сложность по умолчанию.' : 'Console preferences, nickname, accessibility, and default difficulty.'}</p>
         </Link>
+
+        <Link to="/auth" className="menu-card">
+          <h3>{locale === 'ru' ? 'ДОСТУП' : 'ACCESS'}</h3>
+          <p>{locale === 'ru' ? 'Регистрация, вход и проверка текущей авторизации API.' : 'Registration, sign in, and current API authorization checks.'}</p>
+        </Link>
       </div>
     </section>
   );

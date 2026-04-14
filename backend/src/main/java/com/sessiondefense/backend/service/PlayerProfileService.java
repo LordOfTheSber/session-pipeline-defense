@@ -44,20 +44,22 @@ public class PlayerProfileService {
 
     public PlayerProfileResponse upsert(PlayerProfileUpsertRequest request) {
         PlayerProfile profile = getOrCreateByNickname(request.nickname(), request.preferredDifficulty());
-
-        return new PlayerProfileResponse(
-                profile.getId(),
-                profile.getNickname(),
-                profile.getPreferredDifficulty(),
-                profile.getCreatedAt(),
-                profile.getUpdatedAt()
-        );
+        return toResponse(profile);
     }
 
     public PlayerProfileResponse getByNickname(String nickname) {
         PlayerProfile profile = playerProfileRepository.findByNicknameIgnoreCase(nickname.trim())
                 .orElseThrow(() -> new EntityNotFoundException("Player not found for nickname: " + nickname));
+        return toResponse(profile);
+    }
 
+    public PlayerProfileResponse getById(UUID id) {
+        PlayerProfile profile = playerProfileRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Player not found for id: " + id));
+        return toResponse(profile);
+    }
+
+    public PlayerProfileResponse toResponse(PlayerProfile profile) {
         return new PlayerProfileResponse(
                 profile.getId(),
                 profile.getNickname(),

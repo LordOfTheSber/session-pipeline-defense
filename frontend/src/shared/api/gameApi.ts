@@ -1,5 +1,8 @@
 import { fetchJson } from './http';
 import type {
+  AuthLoginRequest,
+  AuthRegisterRequest,
+  AuthResponse,
   DailyChallengeResponse,
   Difficulty,
   HealthResponse,
@@ -16,6 +19,24 @@ import type {
 export const gameApi = {
   getHealth(): Promise<HealthResponse> {
     return fetchJson<HealthResponse>('/api/health');
+  },
+
+  register(payload: AuthRegisterRequest): Promise<AuthResponse> {
+    return fetchJson<AuthResponse>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  login(payload: AuthLoginRequest): Promise<AuthResponse> {
+    return fetchJson<AuthResponse>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  me(): Promise<PlayerProfile> {
+    return fetchJson<PlayerProfile>('/api/auth/me');
   },
 
   getDailyChallenge(): Promise<DailyChallengeResponse> {

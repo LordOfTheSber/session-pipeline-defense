@@ -79,6 +79,7 @@ Important variables:
 - `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`
 - `SERVER_PORT`
+- `JWT_SECRET`, `JWT_ACCESS_TOKEN_TTL`
 
 ## Architecture summary
 
@@ -99,6 +100,11 @@ Important variables:
 
 ### Health
 - `GET /api/health`
+
+### Auth
+- `POST /api/auth/register` — register operator account and receive access token.
+- `POST /api/auth/login` — obtain a bearer token for existing account.
+- `GET /api/auth/me` — protected endpoint; resolves operator profile by bearer token.
 
 ### Challenges
 - `GET /api/challenges/daily`

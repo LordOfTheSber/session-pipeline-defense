@@ -11,6 +11,7 @@ export function AppLayout() {
     { to: '/run-history', label: locale === 'ru' ? 'История' : 'Run History' },
     { to: '/codex', label: locale === 'ru' ? 'Кодекс' : 'Codex' },
     { to: '/settings', label: locale === 'ru' ? 'Настройки' : 'Settings' },
+    { to: '/auth', label: locale === 'ru' ? 'Доступ' : 'Access' },
   ];
 
   return (

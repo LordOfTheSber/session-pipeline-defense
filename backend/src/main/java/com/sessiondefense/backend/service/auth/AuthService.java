@@ -77,16 +77,18 @@ public class AuthService {
     public PlayerProfileResponse me(UUID accountId) {
         AuthAccount account = authAccountRepository.findById(accountId)
                 .orElseThrow(() -> new EntityNotFoundException("Account not found"));
-        return playerProfileService.toResponse(account.getPlayerProfile());
+        return playerProfileService.getById(account.getPlayerProfile().getId());
     }
 
     private AuthResponse buildAuthResponse(AuthAccount account) {
         String accessToken = jwtService.generateToken(account.getId(), account.getEmail(), account.getRole());
+        PlayerProfileResponse profile = playerProfileService.getById(account.getPlayerProfile().getId());
+
         return new AuthResponse(
                 accessToken,
                 "Bearer",
                 jwtService.accessTokenTtlSeconds(),
-                playerProfileService.toResponse(account.getPlayerProfile())
+                profile
         );
     }
 

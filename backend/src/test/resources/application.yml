@@ -9,3 +9,8 @@ spring:
       ddl-auto: create-drop
   flyway:
     enabled: false
+
+security:
+  jwt:
+    secret: test-session-defense-secret-1234567890
+    access-token-ttl: PT12H

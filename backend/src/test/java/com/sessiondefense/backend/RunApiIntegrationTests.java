@@ -206,6 +206,34 @@ class RunApiIntegrationTests {
                 .andExpect(jsonPath("$[0].score").value(2395));
     }
 
+
+    @Test
+    void shouldRegisterAndReadCurrentAuthProfile() throws Exception {
+        Map<String, Object> registerPayload = new HashMap<>();
+        registerPayload.put("nickname", "auth-user");
+        registerPayload.put("email", "auth-user@example.com");
+        registerPayload.put("password", "StrongPass123");
+        registerPayload.put("preferredDifficulty", "STANDARD");
+
+        String authResponseJson = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(registerPayload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.profile.nickname").value("auth-user"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Map<String, Object> authResponse = objectMapper.readValue(authResponseJson, Map.class);
+        String token = (String) authResponse.get("accessToken");
+
+        mockMvc.perform(get("/api/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nickname").value("auth-user"));
+    }
+
     @Test
     void shouldPersistNarrativeProgressWithoutDuplicates() throws Exception {
         mockMvc.perform(get("/api/narrative/state?nickname=operator-seven"))

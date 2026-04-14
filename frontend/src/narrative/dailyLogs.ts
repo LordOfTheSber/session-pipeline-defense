@@ -15,6 +15,21 @@ export const fallbackRecoveredLogs: LogFragment[] = [
   },
 ];
 
+export const fallbackRecoveredLogsRu: LogFragment[] = [
+  {
+    id: 'log-001',
+    act: 'ACT_I_ONBOARDING',
+    title: 'Восстановленный лог #001 — «Эхо нулевой смены»',
+    excerpt: 'Запись подразделения фиксирует краткую петлю маршрутизации перед первой манифестацией Surge. Транскрипт ARIA частично отредактирован.',
+  },
+  {
+    id: 'log-002',
+    act: 'ACT_I_ONBOARDING',
+    title: 'Восстановленный лог #002 — «Холодные стойки, тёплые линии»',
+    excerpt: 'Заметки оператора указывают на тихие отказы валидатора перед аномалиями кластеризации линий.',
+  },
+];
+
 export function buildDailyLogFromChallenge(challengeDate: string, title: string, excerpt: string, actReference: string): LogFragment {
   return {
     id: `daily-${challengeDate}`,

@@ -66,7 +66,7 @@ export function RunSummaryPage() {
           <select id="run-select" value={selectedRunId} onChange={(event) => setSelectedRunIdFromList(event.target.value)}>
             {sortedRunHistory.map((entry) => (
               <option key={entry.id} value={entry.id}>
-                {new Date(entry.createdAt).toLocaleString()} · Score {entry.score} · {entry.mode} · {entry.difficulty}
+                {new Date(entry.createdAt).toLocaleString()} · {locale === 'ru' ? 'Счёт' : 'Score'} {entry.score} · {entry.mode} · {entry.difficulty}
               </option>
             ))}
           </select>
@@ -94,7 +94,7 @@ export function RunSummaryPage() {
       {runSummary.data && (
         <div className="panel panel-accent">
           <p>{locale === 'ru' ? 'Оператор' : 'Operator'}: {runSummary.data.nicknameSnapshot}</p>
-          <p>Run ID: {runSummary.data.id}</p>
+          <p>{locale === 'ru' ? 'ID попытки' : 'Run ID'}: {runSummary.data.id}</p>
           <ul>
             <li>{locale === 'ru' ? 'Длительность смены' : 'Shift duration'}: {runSummary.data.survivalSeconds}s</li>
             <li>{locale === 'ru' ? 'Обработано пакетов' : 'Processed packets'}: {runSummary.data.processedCount}</li>

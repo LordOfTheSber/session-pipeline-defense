@@ -3,14 +3,15 @@ import { useAsyncResource } from '@/shared/hooks/useAsyncResource';
 import { gameApi } from '@/shared/api/gameApi';
 import { getStoredNickname } from '@/shared/lib/profilePrefs';
 import { getStoredLanguage } from '@/shared/lib/i18n';
-import { loreCodex } from '@/narrative/codex';
-import { buildDailyLogFromChallenge, fallbackRecoveredLogs } from '@/narrative/dailyLogs';
+import { loreCodex, loreCodexRu } from '@/narrative/codex';
+import { buildDailyLogFromChallenge, fallbackRecoveredLogs, fallbackRecoveredLogsRu } from '@/narrative/dailyLogs';
 
 const LOCKED_SLOTS = 8;
 
 export function CodexPage() {
   const nickname = getStoredNickname();
   const locale = getStoredLanguage();
+  const codexText = locale === 'ru' ? loreCodexRu : loreCodex;
   const loadNarrativeState = useCallback(() => gameApi.getNarrativeState(nickname), [nickname]);
   const narrativeState = useAsyncResource(loadNarrativeState);
   const dailyChallenge = useAsyncResource(() => gameApi.getDailyChallenge());
@@ -18,7 +19,7 @@ export function CodexPage() {
   const unlockedLogs = useMemo(() => {
     const seenBeatKeys = new Set(narrativeState.data?.seenBeatKeys ?? []);
     const introSeen = seenBeatKeys.has('act1.init_shift');
-    const logs = introSeen ? [...fallbackRecoveredLogs] : [];
+    const logs = introSeen ? [...(locale === 'ru' ? fallbackRecoveredLogsRu : fallbackRecoveredLogs)] : [];
 
     if (dailyChallenge.data && seenBeatKeys.has(dailyChallenge.data.narrativeBeatKey)) {
       logs.push(
@@ -32,7 +33,7 @@ export function CodexPage() {
     }
 
     return logs;
-  }, [dailyChallenge.data, narrativeState.data?.seenBeatKeys]);
+  }, [dailyChallenge.data, locale, narrativeState.data?.seenBeatKeys]);
 
   return (
     <section>
@@ -46,27 +47,27 @@ export function CodexPage() {
       <div className="card-grid">
         <article className="menu-card">
           <h3>{locale === 'ru' ? 'Подразделение' : 'Division'}</h3>
-          <p>{loreCodex.division}</p>
+          <p>{codexText.division}</p>
         </article>
         <article className="menu-card">
           <h3>{locale === 'ru' ? 'Surge' : 'The Surge'}</h3>
-          <p>{loreCodex.surge}</p>
+          <p>{codexText.surge}</p>
         </article>
         <article className="menu-card">
           <h3>ARIA</h3>
-          <p>{loreCodex.aria}</p>
+          <p>{codexText.aria}</p>
         </article>
         <article className="menu-card">
           <h3>{locale === 'ru' ? 'Оператор-7' : 'Operator-7'}</h3>
-          <p>{loreCodex.operator7}</p>
+          <p>{codexText.operator7}</p>
         </article>
         <article className="menu-card">
           <h3>{locale === 'ru' ? 'Пайплайн' : 'Pipeline'}</h3>
-          <p>{loreCodex.pipeline}</p>
+          <p>{codexText.pipeline}</p>
         </article>
         <article className="menu-card">
           <h3>{locale === 'ru' ? 'Пул сессий' : 'Session Pool'}</h3>
-          <p>{loreCodex.sessionPool}</p>
+          <p>{codexText.sessionPool}</p>
         </article>
       </div>
 
